@@ -16,10 +16,11 @@ var (
 )
 
 type AstLogMatcherT struct {
-	Event  AstEventT
-	Match  []AstFieldT
-	Negate []AstFieldT
-	Window time.Duration
+	Event        AstEventT
+	Match        []AstFieldT
+	Negate       []AstFieldT
+	Correlations []string
+	Window       time.Duration
 }
 
 func validateLogSeq(n *parser.NodeT, matches int) error {
@@ -153,9 +154,10 @@ func (b *builderT) doBuildLogMatcherNode(parserNode *parser.NodeT, machineAddres
 			Origin: parserNode.Metadata.Event.Origin,
 			Source: parserNode.Metadata.Event.Source,
 		},
-		Match:  matchFields,
-		Negate: negateFields,
-		Window: parserNode.Metadata.Window,
+		Match:        matchFields,
+		Negate:       negateFields,
+		Window:       parserNode.Metadata.Window,
+		Correlations: parserNode.Metadata.Correlations,
 	}
 
 	return matchNode, nil
