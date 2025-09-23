@@ -13,6 +13,7 @@ import (
 var (
 	ErrSeqPosConditions = errors.New("sequences require two or more positive conditions")
 	ErrMissingScalar    = errors.New("missing string, jq, or regex condition")
+	ErrExtractTerm      = errors.New("invalid extract (must have name and one of jq or regex)")
 )
 
 type AstLogMatcherT struct {
@@ -214,6 +215,15 @@ func newNegateTerm(field parser.FieldT, anchors uint32) (AstFieldT, error) {
 		return AstFieldT{}, err
 	}
 
+	if len(field.Extract) > 0 {
+		extracts, err := extractTerms(field.Extract)
+		if err != nil {
+			return AstFieldT{}, err
+		}
+
+		t.Extracts = extracts
+	}
+
 	if field.NegateOpts != nil {
 
 		if field.NegateOpts.Anchor > anchors {
@@ -229,4 +239,28 @@ func newNegateTerm(field parser.FieldT, anchors uint32) (AstFieldT, error) {
 	}
 
 	return t, nil
+}
+
+func extractTerms(terms []parser.ExtractT) ([]AstExtractT, error) {
+	var extracts []AstExtractT
+	for _, term := range terms {
+		var (
+			cnt int
+			e   = AstExtractT{Name: term.Name}
+		)
+
+		if term.RegexValue != "" {
+			cnt += 1
+			e.RegexValue = term.RegexValue
+		}
+		if term.JqValue != "" {
+			cnt += 1
+			e.JqValue = term.JqValue
+		}
+		if cnt != 1 {
+			return nil, ErrExtractTerm
+		}
+		extracts = append(extracts, e)
+	}
+	return extracts, nil
 }

@@ -66,6 +66,12 @@ type AstNegateOptsT struct {
 	Absolute bool          `json:"absolute"`
 }
 
+type AstExtractT struct {
+	Name       string `json:"name"`
+	JqValue    string `json:"jq_value,omitempty"`
+	RegexValue string `json:"regex_value,omitempty"`
+}
+
 type AstFieldT struct {
 	Field      string          `json:"field"`
 	StrValue   string          `json:"str_value"`
@@ -73,6 +79,7 @@ type AstFieldT struct {
 	RegexValue string          `json:"regex_value"`
 	TermValue  match.TermT     `json:"term_value"`
 	NegateOpts *AstNegateOptsT `json:"negate_opts"`
+	Extracts   []AstExtractT   `json:"extracts"`
 }
 
 type AstEventT struct {
