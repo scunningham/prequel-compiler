@@ -362,6 +362,25 @@ rules:
                 jq: ".field1"
 `
 
+var TestSuccessSimplePromQL = `
+rules:
+  - cre:
+      id: TestSuccessSimplePromQL
+    metadata:
+      id: "J7uRQTGpGMyL1iFpssnBeS"
+      hash: "rdJLgqYgkEp8jg8Qks1qiq"
+      generation: 1
+    rule:
+      sequence:
+        window: 30s
+        event:
+          origin: true
+        order:
+          - promql:
+              query: 'sum(rate(http_requests_total[5m])) by (service)'
+              interval: 10s
+`
+
 /* Failure cases */
 var TestFailTypo = ` # Line 1 starts here
 rules:
@@ -906,8 +925,6 @@ rules:
       generation: 1
     rule:
       set:
-        event:
-          source: kafka
         correlations:
           - hostname
         match:
@@ -929,8 +946,6 @@ rules:
       generation: 1
     rule:
       set:
-        event:
-          source: kafka
         correlations:
           - hostname
         match:

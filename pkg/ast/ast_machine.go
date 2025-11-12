@@ -31,13 +31,13 @@ func (b *builderT) buildMachineNode(parserNode *parser.NodeT, parentMachineAddre
 	)
 
 	switch parserNode.Metadata.Type {
-	case schema.NodeTypeSeq, schema.NodeTypeLogSeq:
+	case schema.NodeTypeSeq, schema.NodeTypeLogSeq, schema.NodeTypePromSeq:
 		matchNode.Metadata.Type = schema.NodeTypeSeq
 		if seqMatcher, err = buildSeqMatcher(parserNode, children); err != nil {
 			return nil, err
 		}
 		matchNode.Object = seqMatcher
-	case schema.NodeTypeSet, schema.NodeTypeLogSet:
+	case schema.NodeTypeSet, schema.NodeTypeLogSet, schema.NodeTypePromSet:
 		matchNode.Metadata.Type = schema.NodeTypeSet
 		if setMatcher, err = buildSetMatcher(parserNode, children); err != nil {
 			return nil, err
