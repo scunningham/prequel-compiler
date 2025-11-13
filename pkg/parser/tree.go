@@ -711,6 +711,7 @@ func nodeFromProm(parent *NodeT, term ParseTermT, yn *yaml.Node) (*NodeT, error)
 			return nil, err
 		}
 		interval = &dur
+		log.Info().Dur("interval", *interval).Str("str", term.PromQL.Interval).Msg("Parsed PromQL interval")
 	}
 
 	node, err := initNode(parent.Metadata.RuleId, parent.Metadata.RuleHash, parent.Metadata.CreId, yn)

@@ -10,7 +10,6 @@ import (
 
 type AstPromQL struct {
 	Query    string
-	External string
 	Interval time.Duration
 }
 
