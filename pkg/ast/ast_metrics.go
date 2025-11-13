@@ -49,7 +49,7 @@ func (b *builderT) buildPromQLNode(parserNode *parser.NodeT, machineAddress *Ast
 
 	var (
 		address = b.newAstNodeAddress(parserNode.Metadata.RuleHash, parserNode.Metadata.Type.String(), termIdx)
-		node    = newAstNode(parserNode, parserNode.Metadata.Type, schema.ScopeNode, machineAddress, address)
+		node    = newAstNode(parserNode, parserNode.Metadata.Type, schema.ScopeCluster, machineAddress, address)
 	)
 
 	node.Object = pn

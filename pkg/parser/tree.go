@@ -178,7 +178,7 @@ func assignNodeSeq(node *NodeT, seq *ParseSequenceT) error {
 
 	switch {
 	case node.IsPromNode():
-		node.Metadata.Type = schema.NodeTypePromSeq
+		node.Metadata.Type = schema.NodeTypePromQL
 	case !node.IsMatcherNode():
 		return ErrInnerEvent
 	default:
@@ -200,7 +200,7 @@ func assignNodeSet(node *NodeT, set *ParseSetT) error {
 
 	switch {
 	case node.IsPromNode():
-		node.Metadata.Type = schema.NodeTypePromSet
+		node.Metadata.Type = schema.NodeTypePromQL
 	case !node.IsMatcherNode():
 		return ErrInnerEvent
 	default:
@@ -573,7 +573,7 @@ func nodeFromTerm(parent *NodeT, termsT map[string]ParseTermT, term ParseTermT, 
 		v, err = nodeFromSet(parent, termsT, term, yn, termsY)
 
 	case term.PromQL != nil:
-		return parsePromQL(term, parentNegate)
+		return nodeFromProm(parent, term, yn)
 
 	case term.StrValue != "" || term.JqValue != "" || term.RegexValue != "":
 		return parseValue(term, parentNegate)
@@ -702,7 +702,7 @@ func buildPosNegChildren(node *NodeT, termsT map[string]ParseTermT, matches, neg
 	return pos, neg, nil
 }
 
-func parsePromQL(term ParseTermT, negate bool) (*PromQLT, error) {
+func nodeFromProm(parent *NodeT, term ParseTermT, yn *yaml.Node) (*NodeT, error) {
 
 	var interval *time.Duration
 	if term.PromQL.Interval != "" {
@@ -713,10 +713,24 @@ func parsePromQL(term ParseTermT, negate bool) (*PromQLT, error) {
 		interval = &dur
 	}
 
-	return &PromQLT{
+	node, err := initNode(parent.Metadata.RuleId, parent.Metadata.RuleHash, parent.Metadata.CreId, yn)
+	if err != nil {
+		return nil, parent.WrapError(err)
+	}
+
+	node.Metadata.Type = schema.NodeTypePromQL
+
+	// Propagate the event
+	if term.PromQL.Event != nil {
+		node.Metadata.Event = newEvent(term.PromQL.Event)
+	}
+
+	node.Children = append(node.Children, &PromQLT{
 		Query:    term.PromQL.Query,
 		Interval: interval,
-	}, nil
+	})
+
+	return node, nil
 }
 
 func parseValue(term ParseTermT, negate bool) (*MatcherT, error) {

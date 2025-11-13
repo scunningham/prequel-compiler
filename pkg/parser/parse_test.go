@@ -72,8 +72,8 @@ func TestParseSuccess(t *testing.T) {
 		},
 		"Success_PromQL": {
 			rule:               testdata.TestSuccessSimplePromQL,
-			expectedNodeTypes:  []string{"promql_seq"},
-			expectedNegIndexes: []int{-1},
+			expectedNodeTypes:  []string{"machine_set", "promql", "log_set"},
+			expectedNegIndexes: []int{-1, -1, -1},
 		},
 	}
 

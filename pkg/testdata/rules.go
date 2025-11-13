@@ -362,25 +362,6 @@ rules:
                 jq: ".field1"
 `
 
-var TestSuccessSimplePromQL = `
-rules:
-  - cre:
-      id: TestSuccessSimplePromQL
-    metadata:
-      id: "J7uRQTGpGMyL1iFpssnBeS"
-      hash: "rdJLgqYgkEp8jg8Qks1qiq"
-      generation: 1
-    rule:
-      sequence:
-        window: 30s
-        event:
-          origin: true
-        order:
-          - promql:
-              query: 'sum(rate(http_requests_total[5m])) by (service)'
-              interval: 10s
-`
-
 /* Failure cases */
 var TestFailTypo = ` # Line 1 starts here
 rules:
@@ -1099,4 +1080,29 @@ rules:
           source: kafka
         match:
           - regex: "io.vertx.core.VertxException: Thread blocked"
+`
+
+var TestSuccessSimplePromQL = `
+rules:
+  - cre:
+      id: TestSuccessSimplePromQL
+    metadata:
+      id: "J7uRQTGpGMyL1iFpssnBeS"
+      hash: "rdJLgqYgkEp8jg8Qks1qiq"
+      generation: 1
+    rule:
+      set:
+        window: 50s
+        match:
+          - promql:
+              event:
+                source: cre.metrics
+                origin: true
+              query: 'sum(rate(http_requests_total[5m])) by (service)'
+              interval: 10s
+          - set:
+              event:
+                source: kafka
+              match:
+                - regex: "io.vertx.core.VertxException: Thread blocked"
 `

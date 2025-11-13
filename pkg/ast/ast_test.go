@@ -71,7 +71,7 @@ func TestAstSuccess(t *testing.T) {
 		},
 		"Success_PromQLMetric": {
 			rule:              testdata.TestSuccessSimplePromQL,
-			expectedNodeTypes: []string{"machine_seq", "promql_seq"},
+			expectedNodeTypes: []string{"machine_set", "promql", "log_set"},
 		},
 	}
 

@@ -257,6 +257,8 @@ func (b *builderT) buildMatcherNodes(parserNode *parser.NodeT, machineAddress *A
 	switch parserNode.Metadata.Type {
 	case schema.NodeTypeLogSeq:
 	case schema.NodeTypeLogSet:
+	case schema.NodeTypePromQL:
+		return b.buildPromQLNode(parserNode, machineAddress, termIdx)
 	default:
 		return nil, parserNode.WrapError(ErrInvalidNodeType)
 	}
@@ -364,7 +366,7 @@ func (b *builderT) buildStateMachine(parserNode *parser.NodeT, parentMachineAddr
 				Msg("Window is required for sequences")
 			return nil, parserNode.WrapError(ErrInvalidWindow)
 		}
-	case schema.NodeTypeSet, schema.NodeTypeLogSet, schema.NodeTypePromSet, schema.NodeTypePromSeq:
+	case schema.NodeTypeSet, schema.NodeTypeLogSet, schema.NodeTypePromQL:
 	default:
 		log.Error().
 			Any("address", machineAddress).
