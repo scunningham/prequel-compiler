@@ -105,7 +105,8 @@ type MatcherT struct {
 }
 
 type PromQLT struct {
-	Query    string         `json:"query"`
+	Expr     string         `json:"expr"`
+	For      *time.Duration `json:"for,omitempty"`
 	Interval *time.Duration `json:"interval,omitempty"`
 }
 
@@ -711,7 +712,15 @@ func nodeFromProm(parent *NodeT, term ParseTermT, yn *yaml.Node) (*NodeT, error)
 			return nil, err
 		}
 		interval = &dur
-		log.Info().Dur("interval", *interval).Str("str", term.PromQL.Interval).Msg("Parsed PromQL interval")
+	}
+
+	var forDuration *time.Duration
+	if term.PromQL.For != "" {
+		dur, err := time.ParseDuration(term.PromQL.For)
+		if err != nil {
+			return nil, err
+		}
+		forDuration = &dur
 	}
 
 	node, err := initNode(parent.Metadata.RuleId, parent.Metadata.RuleHash, parent.Metadata.CreId, yn)
@@ -727,7 +736,8 @@ func nodeFromProm(parent *NodeT, term ParseTermT, yn *yaml.Node) (*NodeT, error)
 	}
 
 	node.Children = append(node.Children, &PromQLT{
-		Query:    term.PromQL.Query,
+		Expr:     term.PromQL.Expr,
+		For:      forDuration,
 		Interval: interval,
 	})
 

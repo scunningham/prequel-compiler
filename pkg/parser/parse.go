@@ -120,8 +120,9 @@ type ParseExtractT struct {
 }
 
 type ParsePromQL struct {
-	Query    string       `yaml:"query"`
+	Expr     string       `yaml:"expr"`
 	Interval string       `yaml:"interval,omitempty"`
+	For      string       `yaml:"for,omitempty"`
 	Event    *ParseEventT `yaml:"event,omitempty"`
 }
 

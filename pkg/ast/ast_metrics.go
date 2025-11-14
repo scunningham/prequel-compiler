@@ -9,13 +9,15 @@ import (
 )
 
 type AstPromQL struct {
-	Query    string
+	Expr     string
+	For      time.Duration
 	Interval time.Duration
+	Event    *AstEventT
 }
 
 func (b *builderT) buildPromQLNode(parserNode *parser.NodeT, machineAddress *AstNodeAddressT, termIdx *uint32) (*AstNodeT, error) {
 
-	// Expects on child of type ParsePromQL
+	// Expects one child of type ParsePromQL
 
 	if len(parserNode.Children) != 1 {
 		log.Error().Int("child_count", len(parserNode.Children)).Msg("PromQL node must have exactly one child")
@@ -29,17 +31,23 @@ func (b *builderT) buildPromQLNode(parserNode *parser.NodeT, machineAddress *Ast
 		return nil, parserNode.WrapError(ErrMissingScalar)
 	}
 
-	if promNode.Query == "" {
-		log.Error().Msg("PromQL query string is empty")
+	if promNode.Expr == "" {
+		log.Error().Msg("PromQL Expr string is empty")
 		return nil, parserNode.WrapError(ErrMissingScalar)
 	}
 
-	if parserNode.Metadata.Event != nil && parserNode.Metadata.Event.Origin {
-		b.HasOrigin = true
+	pn := &AstPromQL{
+		Expr: promNode.Expr,
 	}
 
-	pn := &AstPromQL{
-		Query: promNode.Query,
+	if parserNode.Metadata.Event != nil {
+		if parserNode.Metadata.Event.Origin {
+			b.HasOrigin = true
+		}
+		pn.Event = &AstEventT{
+			Source: parserNode.Metadata.Event.Source,
+			Origin: parserNode.Metadata.Event.Origin,
+		}
 	}
 
 	if promNode.Interval != nil {
