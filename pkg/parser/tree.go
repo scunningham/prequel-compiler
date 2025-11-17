@@ -110,6 +110,10 @@ type PromQLT struct {
 	Interval *time.Duration `json:"interval,omitempty"`
 }
 
+// PromQLValidator validates a PromQL expression.
+// Hook exposed to avoid importing promql dependends in compiler.
+var PromQLValidator = func(expr string) error { return nil }
+
 func newEvent(t *ParseEventT) *EventT {
 	return &EventT{
 		Source: t.Source,
@@ -721,6 +725,10 @@ func nodeFromProm(parent *NodeT, term ParseTermT, yn *yaml.Node) (*NodeT, error)
 			return nil, err
 		}
 		forDuration = &dur
+	}
+
+	if err := PromQLValidator(term.PromQL.Expr); err != nil {
+		return nil, err
 	}
 
 	node, err := initNode(parent.Metadata.RuleId, parent.Metadata.RuleHash, parent.Metadata.CreId, yn)

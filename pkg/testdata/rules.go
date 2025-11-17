@@ -1098,7 +1098,7 @@ rules:
               event:
                 source: cre.metrics
                 origin: true
-              query: 'sum(rate(http_requests_total[5m])) by (service)'
+              expr: 'sum(rate(http_requests_total[5m])) by (service)'
               interval: 10s
           - set:
               event:

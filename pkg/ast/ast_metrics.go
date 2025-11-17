@@ -27,7 +27,7 @@ func (b *builderT) buildPromQLNode(parserNode *parser.NodeT, machineAddress *Ast
 	promNode, ok := parserNode.Children[0].(*parser.PromQLT)
 
 	if !ok {
-		log.Error().Interface("promql", parserNode.Children[0]).Msg("Failed to build PromQL node")
+		log.Error().Any("promql", parserNode.Children[0]).Msg("Failed to build PromQL node")
 		return nil, parserNode.WrapError(ErrMissingScalar)
 	}
 
@@ -52,6 +52,10 @@ func (b *builderT) buildPromQLNode(parserNode *parser.NodeT, machineAddress *Ast
 
 	if promNode.Interval != nil {
 		pn.Interval = *promNode.Interval
+	}
+
+	if promNode.For != nil {
+		pn.For = *promNode.For
 	}
 
 	var (
