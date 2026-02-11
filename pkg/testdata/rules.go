@@ -362,8 +362,8 @@ rules:
                 jq: ".field1"
 `
 
-// We currently to not support script at the root level.
-var TestFailRootScript = `
+// We currently do not support script at the root level.
+var TestFailScriptRoot = `
 rules:
   - cre:
       id: TestSuccessRootScript
@@ -373,10 +373,26 @@ rules:
       generation: 1
     rule:
       script:
-       source: |
+       code: |
          function process(ev)
           print("Processing...")
          end
+`
+
+// Scripte requires an input, so this should fail validation.
+var TestFailScriptNoInput = `
+rules:
+  - cre:
+      id: TestSuccessChildScript
+    metadata:
+      id: "J7uRQTGpGMyL1iFpssnBeS"
+      hash: "rdJLgqYgkEp8jg8Qks1qiq"
+      generation: 1
+    rule:
+      set:
+        match:
+          - script:
+              code: "function process(ev) print(\"Processing...\") end"
 `
 
 var TestSuccessChildScript = `

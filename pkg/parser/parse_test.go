@@ -227,11 +227,17 @@ func TestParseFail(t *testing.T) {
 			col:  7,
 			err:  ErrInvalidRuleHash,
 		},
-		"Fail_RootScript": {
-			rule: testdata.TestFailRootScript,
+		"Fail_ScriptRoot": {
+			rule: testdata.TestFailScriptRoot,
 			line: 10,
 			col:  7,
 			err:  ErrNotSupported,
+		},
+		"Fail_ScriptNoInput": {
+			rule: testdata.TestFailScriptNoInput,
+			line: 11,
+			col:  9,
+			err:  ErrMissingInput,
 		},
 	}
 

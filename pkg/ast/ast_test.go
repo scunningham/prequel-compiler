@@ -48,42 +48,42 @@ func TestAstSuccess(t *testing.T) {
 			rule:              testdata.TestSuccessSimpleRule1,
 			expectedNodeTypes: []string{"machine_seq", "log_seq"},
 		},
-		// "Success_Complex2": {
-		// 	rule:              testdata.TestSuccessComplexRule2,
-		// 	expectedNodeTypes: []string{"machine_seq", "log_seq", "log_set", "machine_seq", "log_seq", "log_set", "log_set"},
-		// },
-		// "Success_Complex3": {
-		// 	rule:              testdata.TestSuccessComplexRule3,
-		// 	expectedNodeTypes: []string{"machine_seq", "log_seq", "log_set"},
-		// },
-		// "Success_Complex4": {
-		// 	rule:              testdata.TestSuccessComplexRule4,
-		// 	expectedNodeTypes: []string{"machine_seq", "log_seq", "machine_seq", "log_seq", "log_set", "log_set", "machine_seq", "log_seq", "log_set", "log_set", "log_set"},
-		// },
-		// "Success_NegateOptions1": {
-		// 	rule:              testdata.TestSuccessNegateOptions1,
-		// 	expectedNodeTypes: []string{"machine_seq", "log_seq"},
-		// },
-		// "Success_NegateOptions2": {
-		// 	rule:              testdata.TestSuccessNegateOptions2,
-		// 	expectedNodeTypes: []string{"machine_seq", "log_seq", "log_set", "log_set"},
-		// },
-		// "Success_Extract1": {
-		// 	rule:              testdata.TestSuccessSimpleExtraction,
-		// 	expectedNodeTypes: []string{"machine_seq", "log_seq"},
-		// },
-		// "Success_PromQLMetric": {
-		// 	rule:              testdata.TestSuccessSimplePromQL,
-		// 	expectedNodeTypes: []string{"machine_set", "promql", "log_set"},
-		// },
-		// "Success_ChildScript": {
-		// 	rule:              testdata.TestSuccessChildScript,
-		// 	expectedNodeTypes: []string{"machine_seq", "script", "log_seq", "log_set"},
-		// },
-		// "Success_ChildScriptMultipleInputs": {
-		// 	rule:              testdata.TestSuccessChildScriptMultipleInputs,
-		// 	expectedNodeTypes: []string{"machine_set", "script", "machine_seq", "log_seq", "log_set"},
-		// },
+		"Success_Complex2": {
+			rule:              testdata.TestSuccessComplexRule2,
+			expectedNodeTypes: []string{"machine_seq", "log_seq", "log_set", "machine_seq", "log_seq", "log_set", "log_set"},
+		},
+		"Success_Complex3": {
+			rule:              testdata.TestSuccessComplexRule3,
+			expectedNodeTypes: []string{"machine_seq", "log_seq", "log_set"},
+		},
+		"Success_Complex4": {
+			rule:              testdata.TestSuccessComplexRule4,
+			expectedNodeTypes: []string{"machine_seq", "log_seq", "machine_seq", "log_seq", "log_set", "log_set", "machine_seq", "log_seq", "log_set", "log_set", "log_set"},
+		},
+		"Success_NegateOptions1": {
+			rule:              testdata.TestSuccessNegateOptions1,
+			expectedNodeTypes: []string{"machine_seq", "log_seq"},
+		},
+		"Success_NegateOptions2": {
+			rule:              testdata.TestSuccessNegateOptions2,
+			expectedNodeTypes: []string{"machine_seq", "log_seq", "log_set", "log_set"},
+		},
+		"Success_Extract1": {
+			rule:              testdata.TestSuccessSimpleExtraction,
+			expectedNodeTypes: []string{"machine_seq", "log_seq"},
+		},
+		"Success_PromQLMetric": {
+			rule:              testdata.TestSuccessSimplePromQL,
+			expectedNodeTypes: []string{"machine_set", "promql", "log_set"},
+		},
+		"Success_ChildScript": {
+			rule:              testdata.TestSuccessChildScript,
+			expectedNodeTypes: []string{"machine_seq", "script", "log_seq", "log_set"},
+		},
+		"Success_ChildScriptMultipleInputs": {
+			rule:              testdata.TestSuccessChildScriptMultipleInputs,
+			expectedNodeTypes: []string{"machine_set", "script", "machine_seq", "log_seq", "log_set"},
+		},
 	}
 
 	for name, test := range tests {

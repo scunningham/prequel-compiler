@@ -804,7 +804,7 @@ func nodeFromScript(parent *NodeT, term ParseTermT, yn *yaml.Node) (*NodeT, erro
 	// Script node requires at least one input.
 	// The input can be a sequence, a set, or a promql term, but not a value term since values cannot be inputs to scripts.
 	if term.Script.Input == nil {
-		return nil, ErrMissingInput
+		return nil, parent.WrapError(ErrMissingInput)
 	}
 
 	// Validator function: only allow terms that could be an input
@@ -821,7 +821,7 @@ func nodeFromScript(parent *NodeT, term ParseTermT, yn *yaml.Node) (*NodeT, erro
 
 	// Validate that input is of an allowed type
 	if !allowTerm(*term.Script.Input) {
-		return nil, ErrInputType
+		return nil, parent.WrapError(ErrInputType)
 	}
 
 	childNode, err := nodeFromTerm(node, nil, *term.Script.Input, false, yn, nil)
@@ -829,7 +829,7 @@ func nodeFromScript(parent *NodeT, term ParseTermT, yn *yaml.Node) (*NodeT, erro
 	case err != nil:
 		return nil, err
 	case childNode == nil:
-		return nil, ErrMissingInput
+		return nil, parent.WrapError(ErrMissingInput)
 	}
 
 	// Assign the script node type
