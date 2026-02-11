@@ -173,38 +173,33 @@ func (b *builderT) buildTree(parserNode *parser.NodeT, parentMachineAddress *Ast
 	return machineMatchNode, nil
 }
 
-func (b *builderT) buildChildrenNodes(parserNode *parser.NodeT, machineAddress *AstNodeAddressT, termIdx *uint32) ([]*AstNodeT, error) {
+func (b *builderT) buildChildrenNodes(parserNode *parser.NodeT, machineAddress *AstNodeAddressT, termIdx *uint32) (children []*AstNodeT, err error) {
 
-	var (
-		err      error
-		children []*AstNodeT
-	)
+	leaf, err := b.buildLeafChild(parserNode, machineAddress, termIdx)
 
-	// Build children (either matcher children or nested machines)
 	switch {
-	case parserNode.IsMatcherNode():
-		if matchNode, err := b.buildMatcherChildren(parserNode, machineAddress, termIdx); err != nil {
-			return nil, err
-		} else {
-			children = append(children, matchNode)
-		}
-	case parserNode.IsPromNode():
-		if matchNode, err := b.buildPromQLNode(parserNode, machineAddress, termIdx); err != nil {
-			return nil, err
-		} else {
-			children = append(children, matchNode)
-		}
+	case err != nil:
+		return nil, err
+	case leaf != nil:
+		return []*AstNodeT{leaf}, nil
 	case parserNode.IsScriptNode():
-		if children, err = b.buildScriptChildren(parserNode, machineAddress); err != nil {
-			return nil, err
-		}
+		children, err = b.buildScriptChildren(parserNode, machineAddress)
 	default:
-		if children, err = b.buildMachineChildren(parserNode, machineAddress); err != nil {
-			return nil, err
-		}
+		children, err = b.buildMachineChildren(parserNode, machineAddress)
 	}
 
-	return children, nil
+	return children, err
+}
+
+func (b *builderT) buildLeafChild(parserNode *parser.NodeT, machineAddress *AstNodeAddressT, termIdx *uint32) (leaf *AstNodeT, err error) {
+
+	switch {
+	case parserNode.IsMatcherNode():
+		leaf, err = b.buildMatcherChild(parserNode, machineAddress, termIdx)
+	case parserNode.IsPromNode():
+		leaf, err = b.buildPromQLNode(parserNode, machineAddress, termIdx)
+	}
+	return
 }
 
 func (b *builderT) newAstNodeAddress(ruleHash, name string, termIdx *uint32) *AstNodeAddressT {
@@ -235,7 +230,7 @@ func newAstNode(parserNode *parser.NodeT, typ schema.NodeTypeT, scope string, pa
 	}
 }
 
-func (b *builderT) buildMatcherChildren(parserNode *parser.NodeT, machineAddress *AstNodeAddressT, termIdx *uint32) (*AstNodeT, error) {
+func (b *builderT) buildMatcherChild(parserNode *parser.NodeT, machineAddress *AstNodeAddressT, termIdx *uint32) (*AstNodeT, error) {
 
 	var (
 		matchNode *AstNodeT
@@ -278,8 +273,6 @@ func (b *builderT) buildMatcherNodes(parserNode *parser.NodeT, machineAddress *A
 	case schema.NodeTypeLogSet:
 	case schema.NodeTypePromQL:
 		return b.buildPromQLNode(parserNode, machineAddress, termIdx)
-	// case schema.NodeTypeScript:
-	// 	return b.buildScriptNode(parserNode, machineAddress, termIdx)
 	default:
 		return nil, parserNode.WrapError(ErrInvalidNodeType)
 	}

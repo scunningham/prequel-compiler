@@ -23,35 +23,35 @@ type AstScriptT struct {
 
 func (b *builderT) buildScriptChildren(parserNode *parser.NodeT, machineAddress *AstNodeAddressT) ([]*AstNodeT, error) {
 
-	if len(parserNode.Children) < 2 {
-		log.Error().Int("child_count", len(parserNode.Children)).Msg("Script node must have at least two children")
+	if len(parserNode.Children) != 2 {
+		log.Error().Int("child_count", len(parserNode.Children)).Msg("Script node must have two children")
 		return nil, parserNode.WrapError(ErrInvalidNodeType)
 	}
 
-	var (
-		children = make([]*AstNodeT, 0, len(parserNode.Children)-1)
-	)
+	termIdx := uint32(1)
 
-	for i, child := range parserNode.Children[1:] {
+	child := parserNode.Children[1]
+	parserChildNode, ok := child.(*parser.NodeT)
+	if !ok {
+		log.Error().Any("child", child).Msg("Failed to build Script child node")
+		return nil, parserNode.WrapError(ErrInvalidNodeType)
+	}
 
-		termIdx := uint32(i)
+	leaf, err := b.buildLeafChild(parserChildNode, machineAddress, &termIdx)
 
-		parserChildNode, ok := child.(*parser.NodeT)
-		if !ok {
-			log.Error().Any("child", child).Msg("Failed to build Script child node")
-			return nil, parserNode.WrapError(ErrInvalidNodeType)
-		}
-
-		// recursively build the child node, passing the term index to provide proper address calcuation
-		nChildren, err := b.buildChildrenNodes(parserChildNode, machineAddress, &termIdx)
+	switch {
+	case err != nil:
+		return nil, err
+	case leaf != nil:
+		return []*AstNodeT{leaf}, nil
+	default:
+		node, err := b.buildTree(parserChildNode, machineAddress, &termIdx)
 		if err != nil {
 			return nil, err
 		}
 
-		children = append(children, nChildren...)
+		return []*AstNodeT{node}, nil
 	}
-
-	return children, nil
 }
 
 // Validate script definitions and build the script node.

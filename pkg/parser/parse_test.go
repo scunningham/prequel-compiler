@@ -82,8 +82,8 @@ func TestParseSuccess(t *testing.T) {
 		},
 		"Success_ChildScriptMultipleInputs": {
 			rule:               testdata.TestSuccessChildScriptMultipleInputs,
-			expectedNodeTypes:  []string{"machine_set", "script", "log_seq", "log_set"},
-			expectedNegIndexes: []int{-1, -1, -1, -1},
+			expectedNodeTypes:  []string{"machine_set", "script", "machine_seq", "log_seq", "log_set"},
+			expectedNegIndexes: []int{-1, -1, -1, -1, -1},
 		},
 	}
 

@@ -393,15 +393,15 @@ rules:
         order:
           - script:
               code: "function process(ev) print(\"Processing...\") end"
-              inputs:
-                - sequence:
-                    event:
-                      source: kafka
-                      origin: true
-                    window: 10s
-                    order:
-                      - value: "term1"
-                      - value: "term2"
+              input:
+                sequence:
+                  window: 10s
+                  event:
+                    source: kafka
+                    origin: true
+                  order:
+                    - value: "term1"
+                    - value: "term2"
           - set:
               event:
                 source: kafka
@@ -410,34 +410,38 @@ rules:
 `
 
 var TestSuccessChildScriptMultipleInputs = `
+---
 rules:
   - cre:
       id: TestSuccessChildScriptMultipleInputs
     metadata:
-      id: "J7uRQTGpGMyL1iFpssnBeS"
-      hash: "rdJLgqYgkEp8jg8Qks1qiq"
+      id: J7uRQTGpGMyL1iFpssnBeS
+      hash: rdJLgqYgkEp8jg8Qks1qiq
       generation: 1
     rule:
       set:
         match:
           - script:
-              code: "function process(ev) print(\"Processing...\") end"
-              inputs:
-                - sequence:
-                    event:
-                      source: kafka
-                      origin: true
-                    window: 10s
-                    order:
-                      - value: "term1"
-                      - value: "term2"
-                - set:
-                    event:
-                      source: kafka
-                    window: 10s
-                    match:
-                      - value: "term3"
-                      - value: "term4"
+              code: function process(ev) print("Processing...") end
+              input:
+                sequence:
+                  window: 10s
+                  order:
+                    - sequence:
+                        event:
+                          source: kafka
+                          origin: true
+                        window: 10s
+                        order:
+                          - value: term1
+                          - value: term2
+                    - set:
+                        event:
+                          source: kafka
+                        window: 10s
+                        match:
+                          - value: term3
+                          - value: term4
 `
 
 /* Failure cases */

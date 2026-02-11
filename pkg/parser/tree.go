@@ -25,7 +25,7 @@ var (
 	ErrTermNotFound     = errors.New("term not found")
 	ErrMissingOrder     = errors.New("'sequence' missing 'order'")
 	ErrMissingMatch     = errors.New("'set' missing 'match'")
-	ErrMissingInputs    = errors.New("'script' missing 'inputs'")
+	ErrMissingInput     = errors.New("'script' missing 'input'")
 	ErrInputType        = errors.New("invalid 'script' input type (must be string, promql, or script)")
 	ErrInvalidWindow    = errors.New("invalid 'window'")
 	ErrTermsMapping     = errors.New("'terms' must be a mapping")
@@ -803,8 +803,8 @@ func nodeFromScript(parent *NodeT, term ParseTermT, yn *yaml.Node) (*NodeT, erro
 
 	// Script node requires at least one input.
 	// The input can be a sequence, a set, or a promql term, but not a value term since values cannot be inputs to scripts.
-	if len(term.Script.Inputs) == 0 {
-		return nil, ErrMissingInputs
+	if term.Script.Input == nil {
+		return nil, ErrMissingInput
 	}
 
 	// Validator function: only allow terms that could be an input
@@ -819,37 +819,28 @@ func nodeFromScript(parent *NodeT, term ParseTermT, yn *yaml.Node) (*NodeT, erro
 		return true
 	}
 
-	// Process the inputs and build child nodes for each.
-	inputs := make([]any, 0, len(term.Script.Inputs))
-	for _, t := range term.Script.Inputs {
+	// Validate that input is of an allowed type
+	if !allowTerm(*term.Script.Input) {
+		return nil, ErrInputType
+	}
 
-		// Validate that each input is of an allowed type
-		if !allowTerm(t) {
-			return nil, ErrInputType
-		}
-
-		childNode, err := nodeFromTerm(node, nil, t, false, yn, nil)
-		switch {
-		case err != nil:
-			return nil, err
-		case childNode == nil:
-			return nil, ErrMissingInputs
-		}
-		inputs = append(inputs, childNode)
+	childNode, err := nodeFromTerm(node, nil, *term.Script.Input, false, yn, nil)
+	switch {
+	case err != nil:
+		return nil, err
+	case childNode == nil:
+		return nil, ErrMissingInput
 	}
 
 	// Assign the script node type
 	node.Metadata.Type = schema.NodeTypeScript
 
-	// Append the script definition as the first child, followed by the inputs.
+	// Append the script definition as the first child, followed by the input.
 	node.Children = append(node.Children, &ScriptT{
 		Code:     term.Script.Code,
 		Language: term.Script.Language,
 		Timeout:  timeout,
-	})
-
-	// Append the inputs as children.
-	node.Children = append(node.Children, inputs...)
+	}, childNode)
 
 	return node, nil
 }

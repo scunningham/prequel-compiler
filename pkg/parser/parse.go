@@ -114,10 +114,10 @@ type ParsePromQL struct {
 }
 
 type ParseScriptT struct {
-	Code     string       `yaml:"code"`
-	Language string       `yaml:"language,omitempty"` // Assumes 'lua' if empty
-	Timeout  string       `yaml:"timeout,omitempty"`  // Uses default if empty; expects duration string
-	Inputs   []ParseTermT `yaml:"inputs"`             // Required inputs
+	Code     string      `yaml:"code"`
+	Language string      `yaml:"language,omitempty"` // Assumes 'lua' if empty
+	Timeout  string      `yaml:"timeout,omitempty"`  // Uses default if empty; expects duration string
+	Input    *ParseTermT `yaml:"input"`              // Required input
 }
 
 type ParseEventT struct {
