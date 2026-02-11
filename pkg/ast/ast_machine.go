@@ -49,6 +49,14 @@ func (b *builderT) buildMachineNode(parserNode *parser.NodeT, parentMachineAddre
 		} else {
 			matchNode.Object = promMatcher
 		}
+	case schema.NodeTypeScript:
+		matchNode.Metadata.Type = schema.NodeTypeScript
+		if scriptNode, err := b.buildScriptNode(parserNode, parentMachineAddress, machineAddress); err != nil {
+			return nil, err
+		} else {
+			matchNode.Object = scriptNode
+		}
+
 	default:
 		log.Error().
 			Str("type", parserNode.Metadata.Type.String()).

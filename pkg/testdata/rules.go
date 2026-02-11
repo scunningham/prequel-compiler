@@ -362,6 +362,84 @@ rules:
                 jq: ".field1"
 `
 
+// We currently to not support script at the root level.
+var TestFailRootScript = `
+rules:
+  - cre:
+      id: TestSuccessRootScript
+    metadata:
+      id: "J7uRQTGpGMyL1iFpssnBeS"
+      hash: "rdJLgqYgkEp8jg8Qks1qiq"
+      generation: 1
+    rule:
+      script:
+       source: |
+         function process(ev)
+          print("Processing...")
+         end
+`
+
+var TestSuccessChildScript = `
+rules:
+  - cre:
+      id: TestSuccessChildScript
+    metadata:
+      id: "J7uRQTGpGMyL1iFpssnBeS"
+      hash: "rdJLgqYgkEp8jg8Qks1qiq"
+      generation: 1
+    rule:
+      sequence:
+        window: 30s
+        order:
+          - script:
+              code: "function process(ev) print(\"Processing...\") end"
+              inputs:
+                - sequence:
+                    event:
+                      source: kafka
+                      origin: true
+                    window: 10s
+                    order:
+                      - value: "term1"
+                      - value: "term2"
+          - set:
+              event:
+                source: kafka
+              match:
+                - value: "term2"
+`
+
+var TestSuccessChildScriptMultipleInputs = `
+rules:
+  - cre:
+      id: TestSuccessChildScriptMultipleInputs
+    metadata:
+      id: "J7uRQTGpGMyL1iFpssnBeS"
+      hash: "rdJLgqYgkEp8jg8Qks1qiq"
+      generation: 1
+    rule:
+      set:
+        match:
+          - script:
+              code: "function process(ev) print(\"Processing...\") end"
+              inputs:
+                - sequence:
+                    event:
+                      source: kafka
+                      origin: true
+                    window: 10s
+                    order:
+                      - value: "term1"
+                      - value: "term2"
+                - set:
+                    event:
+                      source: kafka
+                    window: 10s
+                    match:
+                      - value: "term3"
+                      - value: "term4"
+`
+
 /* Failure cases */
 var TestFailTypo = ` # Line 1 starts here
 rules:

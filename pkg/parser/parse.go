@@ -21,18 +21,18 @@ const (
 )
 
 type ParseRuleT struct {
-	Metadata ParseRuleMetadataT `yaml:"metadata,omitempty" json:"metadata,omitempty"`
-	Cre      ParseCreT          `yaml:"cre,omitempty" json:"cre,omitempty"`
-	Rule     ParseRuleDataT     `yaml:"rule,omitempty" json:"rule,omitempty"`
+	Metadata ParseRuleMetadataT `yaml:"metadata,omitempty"`
+	Cre      ParseCreT          `yaml:"cre,omitempty"`
+	Rule     ParseRuleDataT     `yaml:"rule,omitempty"`
 }
 
 type ParseRuleMetadataT struct {
-	Name    string `yaml:"name,omitempty" json:"name,omitempty"`
-	Id      string `yaml:"id,omitempty" json:"id,omitempty"`
-	Hash    string `yaml:"hash,omitempty" json:"hash,omitempty"`
-	Gen     uint   `yaml:"generation" json:"generation"`
-	Kind    string `yaml:"kind,omitempty" json:"kind,omitempty"`
-	Version string `yaml:"version,omitempty" json:"version,omitempty"`
+	Name    string `yaml:"name,omitempty"`
+	Id      string `yaml:"id,omitempty"`
+	Hash    string `yaml:"hash,omitempty"`
+	Gen     uint   `yaml:"generation"`
+	Kind    string `yaml:"kind,omitempty"`
+	Version string `yaml:"version,omitempty"`
 }
 
 type ParseRuleDataT struct {
@@ -41,13 +41,13 @@ type ParseRuleDataT struct {
 }
 
 type ParseApplicationT struct {
-	Name          string `yaml:"name,omitempty" json:"name,omitempty"`
-	ProcessName   string `yaml:"processName,omitempty" json:"process_name,omitempty"`
-	ProcessPath   string `yaml:"processPath,omitempty" json:"process_path,omitempty"`
-	ContainerName string `yaml:"containerName,omitempty" json:"container_name,omitempty"`
-	ImageUrl      string `yaml:"imageUrl,omitempty" json:"image_url,omitempty"`
-	RepoUrl       string `yaml:"repoUrl,omitempty" json:"repo_url,omitempty"`
-	Version       string `yaml:"version,omitempty" json:"version,omitempty"`
+	Name          string `yaml:"name,omitempty"`
+	ProcessName   string `yaml:"processName,omitempty"`
+	ProcessPath   string `yaml:"processPath,omitempty"`
+	ContainerName string `yaml:"containerName,omitempty"`
+	ImageUrl      string `yaml:"imageUrl,omitempty"`
+	RepoUrl       string `yaml:"repoUrl,omitempty"`
+	Version       string `yaml:"version,omitempty"`
 }
 
 const (
@@ -59,21 +59,21 @@ const (
 )
 
 type ParseCreT struct {
-	Id              string              `yaml:"id,omitempty" json:"id,omitempty"`
-	Severity        uint                `yaml:"severity" json:"severity"`
-	Title           string              `yaml:"title,omitempty" json:"title,omitempty"`
-	Category        string              `yaml:"category,omitempty" json:"category,omitempty"`
-	Tags            []string            `yaml:"tags,omitempty" json:"tags,omitempty"`
-	Author          string              `yaml:"author,omitempty" json:"author,omitempty"`
-	Description     string              `yaml:"description,omitempty" json:"description,omitempty"`
-	Impact          string              `yaml:"impact,omitempty" json:"impact,omitempty"`
-	ImpactScore     uint                `yaml:"impactScore,omitempty" json:"impact_score,omitempty"`
-	Cause           string              `yaml:"cause,omitempty" json:"cause,omitempty"`
-	Mitigation      string              `yaml:"mitigation,omitempty" json:"mitigation,omitempty"`
-	MitigationScore uint                `yaml:"mitigationScore,omitempty" json:"mitigation_score,omitempty"`
-	References      []string            `yaml:"references,omitempty" json:"references,omitempty"`
-	Reports         uint                `yaml:"reports,omitempty" json:"reports,omitempty"`
-	Applications    []ParseApplicationT `yaml:"applications,omitempty" json:"applications,omitempty"`
+	Id              string              `yaml:"id,omitempty"`
+	Severity        uint                `yaml:"severity"`
+	Title           string              `yaml:"title,omitempty"`
+	Category        string              `yaml:"category,omitempty"`
+	Tags            []string            `yaml:"tags,omitempty"`
+	Author          string              `yaml:"author,omitempty"`
+	Description     string              `yaml:"description,omitempty"`
+	Impact          string              `yaml:"impact,omitempty"`
+	ImpactScore     uint                `yaml:"impactScore,omitempty"`
+	Cause           string              `yaml:"cause,omitempty"`
+	Mitigation      string              `yaml:"mitigation,omitempty"`
+	MitigationScore uint                `yaml:"mitigationScore,omitempty"`
+	References      []string            `yaml:"references,omitempty"`
+	Reports         uint                `yaml:"reports,omitempty"`
+	Applications    []ParseApplicationT `yaml:"applications,omitempty"`
 }
 
 type ParseSequenceT struct {
@@ -90,19 +90,6 @@ type ParseNegateOptsT struct {
 	Slide    string `yaml:"slide,omitempty"`
 	Anchor   uint32 `yaml:"anchor,omitempty"`
 	Absolute bool   `yaml:"absolute,omitempty"`
-}
-
-type ParseTermT struct {
-	Field      string            `yaml:"field,omitempty"`
-	StrValue   string            `yaml:"value,omitempty"`
-	JqValue    string            `yaml:"jq,omitempty"`
-	RegexValue string            `yaml:"regex,omitempty"`
-	Count      int               `yaml:"count,omitempty"`
-	Set        *ParseSetT        `yaml:"set,omitempty"`
-	Sequence   *ParseSequenceT   `yaml:"sequence,omitempty"`
-	NegateOpts *ParseNegateOptsT `yaml:",inline,omitempty"`
-	PromQL     *ParsePromQL      `yaml:"promql,omitempty"`
-	Extract    []ParseExtractT   `yaml:"extract,omitempty"`
 }
 
 type ParseSetT struct {
@@ -126,23 +113,55 @@ type ParsePromQL struct {
 	Event    *ParseEventT `yaml:"event,omitempty"`
 }
 
+type ParseScriptT struct {
+	Code     string       `yaml:"code"`
+	Language string       `yaml:"language,omitempty"` // Assumes 'lua' if empty
+	Timeout  string       `yaml:"timeout,omitempty"`  // Uses default if empty; expects duration string
+	Inputs   []ParseTermT `yaml:"inputs"`             // Required inputs
+}
+
+type ParseEventT struct {
+	Source string `yaml:"source"`
+	Origin bool   `yaml:"origin,omitempty"`
+}
+
+type ParseTermT struct {
+	Field      string            `yaml:"field,omitempty"`
+	StrValue   string            `yaml:"value,omitempty"`
+	JqValue    string            `yaml:"jq,omitempty"`
+	RegexValue string            `yaml:"regex,omitempty"`
+	Count      int               `yaml:"count,omitempty"`
+	Set        *ParseSetT        `yaml:"set,omitempty"`
+	Sequence   *ParseSequenceT   `yaml:"sequence,omitempty"`
+	NegateOpts *ParseNegateOptsT `yaml:",inline,omitempty"`
+	PromQL     *ParsePromQL      `yaml:"promql,omitempty"`
+	Script     *ParseScriptT     `yaml:"script,omitempty"`
+	Extract    []ParseExtractT   `yaml:"extract,omitempty"`
+}
+
 func (o *ParseTermT) UnmarshalYAML(unmarshal func(any) error) error {
+
+	// Try to unmarshal as a raw string first.
+	// If that fails, unmarshal as a struct.
+	// This allows for a shorthand syntax for simple match terms.
 	var str string
 	if err := unmarshal(&str); err == nil {
 		o.StrValue = str
 		return nil
 	}
+
 	var temp struct {
-		Field       string            `yaml:"field,omitempty"`
-		StrValue    string            `yaml:"value,omitempty"`
-		JqValue     string            `yaml:"jq,omitempty"`
-		RegexValue  string            `yaml:"regex,omitempty"`
-		Count       int               `yaml:"count,omitempty"`
-		Set         *ParseSetT        `yaml:"set,omitempty"`
-		Sequence    *ParseSequenceT   `yaml:"sequence,omitempty"`
-		NegateOpts  *ParseNegateOptsT `yaml:",inline,omitempty"`
-		ParsePromQL *ParsePromQL      `yaml:"promql,omitempty"`
-		Extract     []ParseExtractT   `yaml:"extract,omitempty"`
+		Field       string            `yaml:"field"`
+		StrValue    string            `yaml:"value"`
+		JqValue     string            `yaml:"jq"`
+		RegexValue  string            `yaml:"regex"`
+		Count       int               `yaml:"count"`
+		Set         *ParseSetT        `yaml:"set"`
+		Sequence    *ParseSequenceT   `yaml:"sequence"`
+		NegateOpts  *ParseNegateOptsT `yaml:",inline"`
+		ParsePromQL *ParsePromQL      `yaml:"promql"`
+		Script      *ParseScriptT     `yaml:"script"`
+		Extract     []ParseExtractT   `yaml:"extract"`
 	}
 	if err := unmarshal(&temp); err != nil {
 		return err
@@ -156,20 +175,9 @@ func (o *ParseTermT) UnmarshalYAML(unmarshal func(any) error) error {
 	o.Sequence = temp.Sequence
 	o.NegateOpts = temp.NegateOpts
 	o.PromQL = temp.ParsePromQL
+	o.Script = temp.Script
 	o.Extract = temp.Extract
 	return nil
-}
-
-type ParseEventT struct {
-	Source string `yaml:"source"`
-	Origin bool   `yaml:"origin,omitempty" json:"origin,omitempty"`
-}
-
-type RulesT struct {
-	Rules  []ParseRuleT          `yaml:"rules"`
-	Root   *yaml.Node            `yaml:"-"`
-	TermsT map[string]ParseTermT `yaml:"terms,omitempty"`
-	TermsY map[string]*yaml.Node `yaml:"-"`
 }
 
 func RootNode(data []byte) (*yaml.Node, error) {
@@ -180,21 +188,25 @@ func RootNode(data []byte) (*yaml.Node, error) {
 	return &root, nil
 }
 
-func _parse(data []byte) (RulesT, *yaml.Node, error) {
+type RulesT struct {
+	Rules  []ParseRuleT          `yaml:"rules"`
+	Root   *yaml.Node            `yaml:"-"`
+	TermsT map[string]ParseTermT `yaml:"terms,omitempty"`
+	TermsY map[string]*yaml.Node `yaml:"-"`
+}
 
-	var (
-		root  yaml.Node
-		rules RulesT
-		err   error
-	)
+func _parse(data []byte) (*RulesT, *yaml.Node, error) {
 
-	if err = yaml.Unmarshal(data, &root); err != nil {
-		return RulesT{}, nil, err
+	root, err := RootNode(data)
+	if err != nil {
+		return nil, nil, err
 	}
 
+	var rules RulesT
 	if err := root.Decode(&rules); err != nil {
-		return RulesT{}, nil, err
+		return nil, nil, err
+
 	}
 
-	return rules, &root, nil
+	return &rules, root, nil
 }

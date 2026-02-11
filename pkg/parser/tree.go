@@ -25,6 +25,8 @@ var (
 	ErrTermNotFound     = errors.New("term not found")
 	ErrMissingOrder     = errors.New("'sequence' missing 'order'")
 	ErrMissingMatch     = errors.New("'set' missing 'match'")
+	ErrMissingInputs    = errors.New("'script' missing 'inputs'")
+	ErrInputType        = errors.New("invalid 'script' input type (must be string, promql, or script)")
 	ErrInvalidWindow    = errors.New("invalid 'window'")
 	ErrTermsMapping     = errors.New("'terms' must be a mapping")
 	ErrDuplicateTerm    = errors.New("duplicate term name")
@@ -36,6 +38,7 @@ var (
 	ErrInvalidRuleHash  = errors.New("invalid rule hash (must be base58)")
 	ErrExtractName      = errors.New("invalid extract name (alphanumeric and underscores only)")
 	ErrInnerEvent       = errors.New("invalid event on inner node")
+	ErrScriptLanguage   = errors.New("invalid script language")
 )
 
 var (
@@ -110,9 +113,15 @@ type PromQLT struct {
 	Interval *time.Duration `json:"interval,omitempty"`
 }
 
-// PromQLValidator validates a PromQL expression.
-// Hook exposed to avoid importing promql dependencies in compiler.
-var PromQLValidator = func(expr string) error { return nil }
+type ScriptT struct {
+	Code     string         `json:"code"`
+	Language string         `json:"language,omitempty"`
+	Timeout  *time.Duration `json:"timeout,omitempty"`
+}
+
+// Hooks exposed to avoid importing dependencies in compiler.
+var PromQLValidator = func(expr string) error { return nil } // PromQLValidator validates a PromQL expression.
+var LuaValidator = func(code string) error { return nil }    // LuaValidator validates Lua script syntax.
 
 func newEvent(t *ParseEventT) *EventT {
 	return &EventT{
@@ -246,6 +255,17 @@ func (node *NodeT) IsPromNode() bool {
 	}
 
 	return allPromQL
+}
+
+func (node *NodeT) IsScriptNode() bool {
+	if len(node.Children) != 2 {
+		return false
+	}
+
+	// Expect first child to be a script definition and second child to be undefined term.
+	_, ok := node.Children[0].(*ScriptT)
+
+	return ok
 }
 
 func seqNodeProps(node *NodeT, seq *ParseSequenceT, order bool, yn *yaml.Node) error {
@@ -487,17 +507,13 @@ func buildChildren(parent *NodeT, tm map[string]ParseTermT, terms []ParseTermT, 
 
 	for _, term := range terms {
 		var (
-			node         any
-			resolvedTerm ParseTermT
-			t            = term
-			n            = yn
-			ok           bool
-			err          error
+			t = term
+			n = yn
 		)
 
 		if term.StrValue != "" {
 			// If the term is not found in the terms map, then use as str value
-			if resolvedTerm, ok = tm[term.StrValue]; ok {
+			if resolvedTerm, ok := tm[term.StrValue]; ok {
 				t = resolvedTerm
 				if n, ok = termsY[term.StrValue]; !ok {
 					return nil, parent.WrapError(ErrTermNotFound)
@@ -509,11 +525,11 @@ func buildChildren(parent *NodeT, tm map[string]ParseTermT, terms []ParseTermT, 
 			}
 		}
 
-		if node, err = nodeFromTerm(parent, tm, t, parentNegate, n, termsY); err != nil {
+		if node, err := nodeFromTerm(parent, tm, t, parentNegate, n, termsY); err != nil {
 			return nil, err
+		} else {
+			children = append(children, node)
 		}
-
-		children = append(children, node)
 
 	}
 
@@ -581,6 +597,9 @@ func nodeFromTerm(parent *NodeT, termsT map[string]ParseTermT, term ParseTermT, 
 
 	case term.PromQL != nil:
 		return nodeFromProm(parent, term, yn)
+
+	case term.Script != nil:
+		return nodeFromScript(parent, term, yn)
 
 	case term.StrValue != "" || term.JqValue != "" || term.RegexValue != "":
 		return parseValue(term, parentNegate)
@@ -754,6 +773,87 @@ func nodeFromProm(parent *NodeT, term ParseTermT, yn *yaml.Node) (*NodeT, error)
 	return node, nil
 }
 
+// Script nodes are internal nodes with one or more input nodes.
+// The first child in the resultant NodeT is always the script definition, and the remaining children are the inputs.
+func nodeFromScript(parent *NodeT, term ParseTermT, yn *yaml.Node) (*NodeT, error) {
+
+	var timeout *time.Duration
+	if term.Script.Timeout != "" {
+		dur, err := time.ParseDuration(term.Script.Timeout)
+		if err != nil {
+			return nil, err
+		}
+		timeout = &dur
+	}
+
+	switch term.Script.Language {
+	case "", "lua":
+		if err := LuaValidator(term.Script.Code); err != nil {
+			return nil, err
+		}
+	default:
+		return nil, ErrScriptLanguage
+	}
+
+	// Create the script node with metadata from the parent rule.
+	node, err := initNode(parent.Metadata.RuleId, parent.Metadata.RuleHash, parent.Metadata.CreId, yn)
+	if err != nil {
+		return nil, parent.WrapError(err)
+	}
+
+	// Script node requires at least one input.
+	// The input can be a sequence, a set, or a promql term, but not a value term since values cannot be inputs to scripts.
+	if len(term.Script.Inputs) == 0 {
+		return nil, ErrMissingInputs
+	}
+
+	// Validator function: only allow terms that could be an input
+	allowTerm := func(t ParseTermT) bool {
+		switch {
+		case t.Sequence != nil:
+		case t.Set != nil:
+		case t.PromQL != nil:
+		default:
+			return false
+		}
+		return true
+	}
+
+	// Process the inputs and build child nodes for each.
+	inputs := make([]any, 0, len(term.Script.Inputs))
+	for _, t := range term.Script.Inputs {
+
+		// Validate that each input is of an allowed type
+		if !allowTerm(t) {
+			return nil, ErrInputType
+		}
+
+		childNode, err := nodeFromTerm(node, nil, t, false, yn, nil)
+		switch {
+		case err != nil:
+			return nil, err
+		case childNode == nil:
+			return nil, ErrMissingInputs
+		}
+		inputs = append(inputs, childNode)
+	}
+
+	// Assign the script node type
+	node.Metadata.Type = schema.NodeTypeScript
+
+	// Append the script definition as the first child, followed by the inputs.
+	node.Children = append(node.Children, &ScriptT{
+		Code:     term.Script.Code,
+		Language: term.Script.Language,
+		Timeout:  timeout,
+	})
+
+	// Append the inputs as children.
+	node.Children = append(node.Children, inputs...)
+
+	return node, nil
+}
+
 func parseValue(term ParseTermT, negate bool) (*MatcherT, error) {
 
 	var (
@@ -804,17 +904,14 @@ func parseValue(term ParseTermT, negate bool) (*MatcherT, error) {
 }
 
 func ParseCres(data []byte) (map[string]ParseCreT, error) {
-	var (
-		config RulesT
-		cres   = make(map[string]ParseCreT)
-		err    error
-	)
 
-	if config, _, err = _parse(data); err != nil {
+	cfg, _, err := _parse(data)
+	if err != nil {
 		return nil, err
 	}
 
-	for _, rule := range config.Rules {
+	cres := make(map[string]ParseCreT, len(cfg.Rules))
+	for _, rule := range cfg.Rules {
 		cres[rule.Metadata.Hash] = rule.Cre
 	}
 
@@ -837,32 +934,23 @@ func Parse(data []byte, opts ...ParseOptT) (*TreeT, error) {
 
 func Unmarshal(data []byte) (*RulesT, error) {
 
-	var (
-		docMap    *yaml.Node
-		termsNode *yaml.Node
-		config    RulesT
-		root      *yaml.Node
-		ok        bool
-		err       error
-	)
-
-	if config, root, err = _parse(data); err != nil {
+	cfg, root, err := _parse(data)
+	if err != nil {
 		return nil, err
 	}
 
-	docMap = root.Content[0]
+	docMap := root.Content[0]
 
-	config.Root, ok = findChild(docMap, docRules)
-	if !ok {
+	var ok bool
+	if cfg.Root, ok = findChild(docMap, docRules); !ok {
 		return nil, errors.New("rules not found")
 	}
 
-	termsNode, ok = findChild(docMap, docTerms)
-	if ok {
-		config.TermsY = collectTermsY(termsNode)
+	if termsNode, ok := findChild(docMap, docTerms); ok {
+		cfg.TermsY = collectTermsY(termsNode)
 	}
 
-	return &config, nil
+	return cfg, nil
 }
 
 func Hash(h string) string {

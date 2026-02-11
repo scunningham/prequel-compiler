@@ -75,6 +75,16 @@ func TestParseSuccess(t *testing.T) {
 			expectedNodeTypes:  []string{"machine_set", "promql", "log_set"},
 			expectedNegIndexes: []int{-1, -1, -1},
 		},
+		"Success_ChildScript": {
+			rule:               testdata.TestSuccessChildScript,
+			expectedNodeTypes:  []string{"machine_seq", "script", "log_seq", "log_set"},
+			expectedNegIndexes: []int{-1, -1, -1, -1},
+		},
+		"Success_ChildScriptMultipleInputs": {
+			rule:               testdata.TestSuccessChildScriptMultipleInputs,
+			expectedNodeTypes:  []string{"machine_set", "script", "log_seq", "log_set"},
+			expectedNegIndexes: []int{-1, -1, -1, -1},
+		},
 	}
 
 	for name, test := range tests {
@@ -216,6 +226,12 @@ func TestParseFail(t *testing.T) {
 			line: 11,
 			col:  7,
 			err:  ErrInvalidRuleHash,
+		},
+		"Fail_RootScript": {
+			rule: testdata.TestFailRootScript,
+			line: 10,
+			col:  7,
+			err:  ErrNotSupported,
 		},
 	}
 
