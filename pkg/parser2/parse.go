@@ -16,20 +16,22 @@ func ParseRules(yamlInput []byte, opts ...ParseOpt) ([]AstRuleT, error) {
 		return nil, err
 	}
 
-	p := newParser(o.colorize, o.strict, anchors)
+	p := newParser(o, anchors)
 	return p.parse(yamlInput)
 }
 
 type parserT struct {
 	strict   bool
 	colorize bool
+	warnF    WarnF
 	anchors  map[string][]byte
 }
 
-func newParser(colorize, strict bool, anchors map[string][]byte) *parserT {
+func newParser(o parseOpts, anchors map[string][]byte) *parserT {
 	return &parserT{
-		strict:   strict,
-		colorize: colorize,
+		strict:   o.strict,
+		colorize: o.colorize,
+		warnF:    o.warnF,
 		anchors:  anchors,
 	}
 }
@@ -222,7 +224,7 @@ func (p *parserT) parseCreNode(node ast.Node) (*ParseCreT, error) {
 // 	Set      *ParseSetT      `yaml:"set,omitempty"`
 // }
 
-func (p *parserT) parseRootNode(node ast.Node) (*AstNodeT, error) {
+func (p *parserT) parseRootNode(node ast.Node) (AstNode, error) {
 
 	mapping, ok := node.(*ast.MappingNode)
 	if !ok {
@@ -231,9 +233,8 @@ func (p *parserT) parseRootNode(node ast.Node) (*AstNodeT, error) {
 	}
 
 	var (
-		err     error
-		setNode *AstNodeT
-		seqNode *AstNodeT
+		err      error
+		rootNode AstNode
 	)
 
 	for _, v := range mapping.Values {
@@ -241,44 +242,41 @@ func (p *parserT) parseRootNode(node ast.Node) (*AstNodeT, error) {
 		key, ok := v.Key.(*ast.StringNode)
 		switch {
 		case !ok:
+			err := fmt.Errorf("%w: %s", ErrUnexpectedType, v.Key.Type())
 			if p.strict {
-				err := fmt.Errorf("%w: %s", ErrUnexpectedType, v.Key.Type())
 				return nil, p.wrapError(v.Key, err)
 			}
+			p.options.Warn(err.Error())
+
+		case rootNode != nil:
+			err := fmt.Errorf("%w: multiple root keys found in rule definition", ErrUnexpectedKey)
+			return nil, p.wrapError(v.Key, err)
 
 		case key.Value == kwSequence:
-
-			if seqNode, err = p.parseSequenceNode(v.Value); err != nil {
+			if rootNode, err = p.parseSequenceNode(v.Value); err != nil {
 				return nil, err
 			}
 
 		case key.Value == kwSet:
-			if setNode, err = p.parseSetNode(v.Value); err != nil {
+			if rootNode, err = p.parseSetNode(v.Value); err != nil {
 				return nil, err
 			}
 
+		case p.strict:
+			err := fmt.Errorf("%w: %s", ErrUnexpectedKey, key.Value)
+			return nil, p.wrapError(v, err)
+
 		default:
-			if p.strict {
-				err := fmt.Errorf("%w: %s", ErrUnexpectedKey, key.Value)
-				return nil, p.wrapError(v, err)
-			}
+			// If we received a unknown key in non-strict mode, create a stub and continue.
+			// This is to allow for forward compatibility with new root types without breaking existing rules.
+			rootNode = &astUnknownKey{key: key.Value}
+
 		}
 	}
 
-	var rootNode *AstNodeT
-
-	// Check one or the other but not both are present
-	switch {
-	case setNode == nil && seqNode == nil:
-		err = fmt.Errorf("%w: expected rule root to contain either '%s' or '%s' key", ErrMissingKey, kwSequence, kwSet)
+	if rootNode == nil {
+		err := fmt.Errorf("%w: expected rule root to contain either '%s' or '%s' key", ErrMissingKey, kwSequence, kwSet)
 		return nil, p.wrapError(mapping, err)
-	case setNode != nil && seqNode != nil:
-		err = fmt.Errorf("%w: rule root cannot contain both '%s' and '%s' keys", ErrUnexpectedKey, kwSequence, kwSet)
-		return nil, p.wrapError(mapping, err)
-	case seqNode != nil:
-		rootNode = seqNode
-	default:
-		rootNode = setNode
 	}
 
 	return rootNode, nil
@@ -472,9 +470,9 @@ func (p *parserT) wrapError(node ast.Node, err error) error {
 	return fmt.Errorf("%w: %w", parseError, err)
 }
 
-func (p *parserT) wrapErrorPath(path string, node ast.Node, err error) error {
+// func (p *parserT) wrapErrorPath(path string, node ast.Node, err error) error {
 
-}
+// }
 
 // func ParseRules(yamlInput []byte, flags ParseFlagsT) ([]AstNode, error) {
 

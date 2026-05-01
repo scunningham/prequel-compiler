@@ -1,4 +1,4 @@
-package parser2
+package anchors
 
 import (
 	"fmt"
@@ -27,7 +27,7 @@ func LoadAnchorsFromDir(dir string) (map[string]ast.Node, error) {
 		}
 
 		var dupe string
-		anchors, dupe = mergeAnchors(anchors, fileAnchors)
+		anchors, dupe = MergeAnchors(anchors, fileAnchors)
 		if dupe != "" {
 			return nil, fmt.Errorf("duplicate anchor name '%s' in file %s", dupe, file)
 		}
@@ -56,7 +56,7 @@ func collectYamlFilesFromDir(dir string) (files []string, err error) {
 	return
 }
 
-func mergeAnchors(a, b map[string]ast.Node) (map[string]ast.Node, string) {
+func MergeAnchors(a, b map[string]ast.Node) (map[string]ast.Node, string) {
 	if a == nil {
 		return b, ""
 	}
@@ -79,10 +79,10 @@ func loadAnchorsFromFile(path string) (map[string]ast.Node, error) {
 		return nil, fmt.Errorf("open file: %w", err)
 	}
 	defer rdr.Close()
-	return collectAnchors(rdr)
+	return CollectAnchors(rdr)
 }
 
-func collectAnchors(rdr io.Reader) (map[string]ast.Node, error) {
+func CollectAnchors(rdr io.Reader) (map[string]ast.Node, error) {
 	data, err := io.ReadAll(rdr)
 	if err != nil {
 		return nil, fmt.Errorf("read: %w", err)

@@ -13,6 +13,24 @@ type AstMetadataT struct {
 	Cre      ParseCreT
 }
 
+type baseAstNodeT struct {
+	addr   AstNodeAddressT
+	parent *AstNodeAddressT
+}
+
+type astUnknownKey struct {
+	baseAstNodeT
+	key string
+}
+
+func (a *baseAstNodeT) Addr() AstNodeAddressT {
+	return a.addr
+}
+
+func (a *baseAstNodeT) Parent() *AstNodeAddressT {
+	return a.parent
+}
+
 type ParseMetadataT struct {
 	Name    string `yaml:"name,omitempty"`
 	Id      string `yaml:"id,omitempty"`
