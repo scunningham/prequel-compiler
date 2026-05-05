@@ -3,7 +3,6 @@ module github.com/prequel-dev/prequel-compiler
 go 1.25
 
 require (
-	github.com/btcsuite/btcutil v1.0.2
 	github.com/goccy/go-yaml v1.19.2
 	github.com/jedib0t/go-pretty/v6 v6.7.10
 	github.com/prequel-dev/prequel-logmatch v0.0.20

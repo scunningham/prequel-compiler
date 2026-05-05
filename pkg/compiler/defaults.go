@@ -1,10 +1,10 @@
-package compiler2
+package compiler
 
 import (
 	"context"
 	"fmt"
 
-	"github.com/prequel-dev/prequel-compiler/pkg/parser2"
+	"github.com/prequel-dev/prequel-compiler/pkg/parser"
 )
 
 var (
@@ -39,9 +39,9 @@ func NewDefaultPlugin() *DefaultPlugin {
 	return &DefaultPlugin{}
 }
 
-func (p *DefaultPlugin) Compile(runtime RuntimeI, node parser2.AstNode) (ObjsT, error) {
+func (p *DefaultPlugin) Compile(runtime RuntimeI, node parser.AstNode) (ObjsT, error) {
 
-	match, ok := node.(*parser2.AstMatchLeafT)
+	match, ok := node.(*parser.AstMatchLeafT)
 	if !ok {
 		return nil, fmt.Errorf("%w: %T", ErrUnsupportedAstType, node)
 	}

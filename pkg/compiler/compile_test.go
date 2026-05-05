@@ -1,10 +1,10 @@
-package compiler2
+package compiler
 
 import (
 	"fmt"
 	"testing"
 
-	"github.com/prequel-dev/prequel-compiler/pkg/parser2"
+	"github.com/prequel-dev/prequel-compiler/pkg/parser"
 )
 
 func TestCompile(t *testing.T) {
@@ -32,7 +32,7 @@ func TestCompile(t *testing.T) {
             anchor: 1
 `
 
-	xx, err := Compile([]byte(rule), parser2.AstScopeNode)
+	xx, err := Compile([]byte(rule), parser.AstScopeNode)
 	if err != nil {
 		t.Fatal(err)
 	}

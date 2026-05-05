@@ -1,4 +1,4 @@
-package parser2
+package parser
 
 // State struct for tracking rule metadata, origin count, unique ID generation, depth, and rank during parsing.
 // This is passed through recursive calls to ensure consistent state management and error reporting.
