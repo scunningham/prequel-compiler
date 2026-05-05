@@ -119,7 +119,7 @@ func TestParseRules4(t *testing.T) {
     metadata:
 
       id: eeJwJiWQa9TyH3qTYYSZM9
-      hash: 9GJSdx4smGJeJCdiw6tiK5
+      hash: 9GJSdx4smGJeJCdiw6tiK59GJSdx4smGJeJCdiw6tiK5
     rule:
       set:
         event:
