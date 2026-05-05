@@ -1,0 +1,117 @@
+package compiler2
+
+import (
+	"fmt"
+
+	"github.com/prequel-dev/prequel-compiler/pkg/parser2"
+	"github.com/prequel-dev/prequel-logmatch/pkg/match"
+	"github.com/rs/zerolog/log"
+)
+
+func toLogResets(terms []parser2.AstFieldT) []match.ResetT {
+	resets := make([]match.ResetT, 0, len(terms))
+	for _, term := range terms {
+
+		if term.NegateOpts == nil {
+			resets = append(resets, match.ResetT{
+				Term: term.TermValue,
+			})
+			continue
+		}
+
+		resets = append(resets, match.ResetT{
+			Term:     term.TermValue,
+			Window:   term.NegateOpts.Window.Nanoseconds(),
+			Slide:    term.NegateOpts.Slide.Nanoseconds(),
+			Anchor:   uint8(term.NegateOpts.Anchor),
+			Absolute: term.NegateOpts.Absolute,
+		})
+
+		log.Debug().Any("reset", resets[len(resets)-1]).Msg("Adding log resets")
+	}
+	return resets
+}
+
+func toLogTerms(fields []parser2.AstFieldT) []match.TermT {
+	terms := make([]match.TermT, 0, len(fields))
+	for _, field := range fields {
+		// match interface does not yet support explicit counts, do dupe.
+		// TODO: Revise when log matcher supports counts.
+		for range field.Count {
+			terms = append(terms, field.TermValue)
+		}
+	}
+	return terms
+}
+
+func ObjLogMatcher(runtime RuntimeI, node *parser2.AstMatchLeafT) (*ObjT, error) {
+	var (
+		err error
+		obj = NewObj(node, ObjTypeMatcher)
+	)
+
+	obj.Event.Origin = node.Event.Origin
+	obj.Event.Source = node.Event.Source
+
+	params := MatchParamsT{
+		Address:       node.Address(),
+		ParentAddress: node.Parent(),
+		Origin:        node.Event.Origin,
+	}
+
+	obj.Cb = runtime.NewCbMatch(params)
+
+	switch node.Type() {
+	case parser2.AstNodeTypeSeq:
+		if obj.Object, err = makeLogSeqObjects(node); err != nil {
+			return nil, err
+		}
+
+	case parser2.AstNodeTypeSet:
+
+		if obj.Object, err = makeLogSetObjects(node); err != nil {
+			return nil, err
+		}
+
+	default:
+		return nil, fmt.Errorf("%w: %s", ErrUnsupportedNodeType, node.Type())
+	}
+
+	return obj, nil
+}
+
+func makeLogSeqObjects(node *parser2.AstMatchLeafT) (any, error) {
+
+	switch {
+	case len(node.Negate) > 0:
+		return match.NewInverseSeq(
+			node.Window.Nanoseconds(),
+			toLogTerms(node.Terms),
+			toLogResets(node.Negate),
+		)
+
+	case len(node.Terms) == 1:
+		return nil, ErrSequenceSingleMatch
+
+	default:
+		return match.NewMatchSeq(node.Window.Nanoseconds(), toLogTerms(node.Terms)...)
+	}
+}
+
+func makeLogSetObjects(node *parser2.AstMatchLeafT) (any, error) {
+
+	switch {
+	case len(node.Negate) > 0:
+		return match.NewInverseSet(
+			node.Window.Nanoseconds(),
+			toLogTerms(node.Terms),
+			toLogResets(node.Negate),
+		)
+
+	case len(node.Terms) == 1:
+		return match.NewMatchSingle(toLogTerms(node.Terms)[0])
+
+	default:
+		return match.NewMatchSet(node.Window.Nanoseconds(), toLogTerms(node.Terms)...)
+	}
+}

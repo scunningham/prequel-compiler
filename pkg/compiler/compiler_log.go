@@ -2,6 +2,7 @@ package compiler
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/prequel-dev/prequel-compiler/pkg/ast"
 	"github.com/prequel-dev/prequel-compiler/pkg/schema"
@@ -85,8 +86,7 @@ func ObjLogMatcher(runtime RuntimeI, node *ast.AstNodeT) (*ObjT, error) {
 		}
 
 	default:
-		log.Error().Type("node_type", node.Metadata.Type).Msg("Unsupported node type")
-		return nil, ErrUnsupportedNodeType
+		return nil, fmt.Errorf("%w: %s", ErrUnsupportedNodeType, node.Metadata.Type)
 	}
 
 	return obj, nil

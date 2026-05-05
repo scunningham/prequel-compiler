@@ -1,6 +1,8 @@
 package compiler
 
 import (
+	"fmt"
+
 	"github.com/prequel-dev/prequel-compiler/pkg/ast"
 	"github.com/prequel-dev/prequel-compiler/pkg/schema"
 	"github.com/rs/zerolog/log"
@@ -27,11 +29,7 @@ func (p *DefaultPlugin) Compile(runtime RuntimeI, node *ast.AstNodeT) (ObjsT, er
 			return nil, err
 		}
 	default:
-		log.Error().
-			Interface("node_type", node.Metadata.Type).
-			Interface("node", node).
-			Msg("Unsupported node type")
-		return nil, ErrUnsupportedNodeType
+		return nil, fmt.Errorf("%w: %s", ErrUnsupportedNodeType, node.Metadata.Type)
 	}
 
 	objs = append(objs, obj)
