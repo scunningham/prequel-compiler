@@ -145,6 +145,14 @@ func (p *parserT) constructNode(addr *AstNodeAddressT, state ruleState, mapping 
 			return nil, p.wrapError(mapping, err)
 		}
 
+		// Translate node type
+		switch proto.ty {
+		case AstNodeTypeSet:
+			proto.ty = AstNodeTypeMatchSet
+		case AstNodeTypeSeq:
+			proto.ty = AstNodeTypeMatchSeq
+		}
+
 		node = &AstMatchLeafT{
 			baseAst:      baseAst{ty: proto.ty, address: *addr, parent: state.parent, scope: AstScopeNode},
 			Window:       proto.window,

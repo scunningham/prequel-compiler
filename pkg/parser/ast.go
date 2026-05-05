@@ -98,6 +98,8 @@ type AstNodeType int
 const (
 	AstNodeTypeSet AstNodeType = iota
 	AstNodeTypeSeq
+	AstNodeTypeMatchSet
+	AstNodeTypeMatchSeq
 	AstNodeTypePromQL
 	AstNodeTypeScript
 )
@@ -108,6 +110,10 @@ func (t AstNodeType) String() string {
 		return kwSet
 	case AstNodeTypeSeq:
 		return kwSequence
+	case AstNodeTypeMatchSet:
+		return "match_set"
+	case AstNodeTypeMatchSeq:
+		return "match_seq"
 	case AstNodeTypePromQL:
 		return kwPromQL
 	case AstNodeTypeScript:
