@@ -7,9 +7,7 @@ import (
 	"github.com/goccy/go-yaml/ast"
 )
 
-var (
-	validCreIdRegex = regexp.MustCompile(`^[A-Za-z0-9-]{4,}$`)
-)
+var validCreIdRegex = regexp.MustCompile(`^[A-Za-z0-9-]{4,}$`)
 
 func (p *parserT) parseCreNode(node ast.Node) (*AstCreT, error) {
 
