@@ -107,17 +107,17 @@ const (
 func (t AstNodeType) String() string {
 	switch t {
 	case AstNodeTypeSet:
-		return kwSet
+		return "machine_set"
 	case AstNodeTypeSeq:
-		return kwSequence
+		return "machine_seq"
 	case AstNodeTypeMatchSet:
-		return "match_set"
+		return "log_set"
 	case AstNodeTypeMatchSeq:
-		return "match_seq"
+		return "log_seq"
 	case AstNodeTypePromQL:
-		return kwPromQL
+		return "promql"
 	case AstNodeTypeScript:
-		return kwScript
+		return "script"
 	default:
 		return "unknown"
 	}

@@ -34,7 +34,7 @@ func (p *parserT) parseInnerNode(state ruleState, ty AstNodeType, node ast.Node)
 
 	var (
 		proto      = protoNode{ty: ty}
-		child      = state.pushNode(ty)
+		child      = state.pushNode(ty).setRank(0) // Reset the rank for the child node; the parent rank should not affect the rank of terms within a set or sequence.
 		negateNode ast.Node
 	)
 

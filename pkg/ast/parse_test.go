@@ -529,3 +529,169 @@ rules:
         match:
           - Discarding message
 `
+
+var TestSuccessNestedSequence5 = `
+rules:
+  - cre:
+      id: cre-2024-006
+    metadata:
+      id: "J7uRQTGpGMyL1iFpssnBeS"
+      hash: "rdJLgqYgkEp8jg8Qks1qiqrdJLgqYgkEp8jg8Qks1qiq"
+      gen: 1
+    rule:
+      sequence:
+        window: 30s
+        correlations:
+          - hostname
+        order:
+          - sequence:
+              window: 10s
+              event:
+                source: rabbitmq
+                origin: true
+              order:
+                - value: Discarding message
+                  count: 10
+                - Mnesia overloaded
+              negate:
+                - SIGTERM
+          - sequence:
+              window: 5s
+              correlations:
+                - containerId
+              order:
+                - sequence:
+                    window: 1s
+                    event:
+                      source: nginx
+                    order:
+                      - error message
+                      - shutdown
+                - set:
+                    event:
+                      source: nginx
+                    match:
+                      - 90%
+                - set:
+                    event:
+                      source: k8s
+                    match:
+                      - field: "reason"
+                        value: "Killing"
+        negate:
+          - set:
+              event:
+                source: k8s
+              match:
+                - field: "reason"
+                  value: "NodeShutdown"
+
+`
+
+func TestSuccessNestedSequence5_(t *testing.T) {
+
+	rule, err := rewriteAnchor([]byte(TestSuccessNestedSequence5))
+	if err != nil {
+		t.Fatalf("rewriteAnchor failed: %v", err)
+	}
+
+	tt, err := ParseRules([]byte(rule), WithStrict(true))
+	if err != nil {
+		t.Fatalf("ParseRules failed: %v", err)
+	}
+
+	fmt.Println(Draw(tt[0], WithColor()))
+}
+
+var TestSuccessNestedSequence6 = `
+rules:
+  - cre:
+      id: nested-example
+    metadata:
+      id: "J7uRQTGpGMyL1iFpssnBeS"
+      hash: "rdJLgqYgkEp8jg8Qks1qiqrdJLgqYgkEp8jg8Qks1qiq"
+      gen: 1
+    rule:
+      sequence:
+        window: 30s
+        correlations:
+          - hostname
+        order:
+          - sequence:
+              window: 10s
+              event:
+                source: rabbitmq
+                origin: true
+              order:
+                - value: Discarding message
+                  count: 10
+                - Mnesia overloaded
+              negate:
+                - SIGTERM
+          - sequence:
+              window: 5s
+              correlations:
+                - container_id
+              order:
+                - sequence:
+                    window: 1s
+                    event:
+                      source: nginx
+                    order:
+                      - error message
+                      - shutdown
+                - set:
+                    event:
+                      source: nginx
+                    match:
+                      - 90%
+                - set:
+                    event:
+                      source: k8s
+                    match:
+                      - field: "reason"
+                        value: "Killing"
+          - sequence:
+              window: 5s
+              correlations:
+                - container_id
+              order:
+                - sequence:
+                    window: 1s
+                    event:
+                      source: nginx
+                    order:
+                      - error message
+                      - shutdown
+                - set:
+                    event:
+                      source: nginx
+                    match:
+                      - 90%
+                - set:
+                    event:
+                      source: k8s
+                    match:
+                      - field: "reason"
+                        value: "Killing"
+        negate:
+          - set:
+              event:
+                source: k8s
+              match:
+                - field: "reason"
+                  value: "NodeShutdown"
+`
+
+func BenchmarkParseRules(b *testing.B) {
+
+	rule := TestSuccessNestedSequence6
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, err := ParseRules([]byte(rule), WithStrict(true))
+		if err != nil {
+			b.Fatalf("ParseRules failed: %v", err)
+		}
+	}
+}

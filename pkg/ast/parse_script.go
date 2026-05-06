@@ -73,20 +73,4 @@ func (p *parserT) parseScriptNode(state ruleState, node ast.Node) (*AstScriptT, 
 func (p *parserT) parseScriptInput(state ruleState, node ast.Node) (AstNode, error) {
 
 	return p.parseRootNode(state, node)
-
-	// if err != nil {
-	// 	return
-	// }
-
-	// // Expect exactly one term in the input definition
-	// if len(protoTerms) != 1 {
-	// 	tErr := fmt.Errorf("%w: script input must contain exactly one term, found %d", ErrUnexpectedKey, len(terms))
-	// 	err = p.wrapError(node, tErr)
-	// 	return
-	// }
-
-	// terms := protoTermsToAstTerms(protoTerms)
-
-	// return terms[0], nil
-
 }
