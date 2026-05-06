@@ -67,6 +67,7 @@ mitigation: |
   - Use the Zookeeper store instead of the Kafka Streams store for the Strimzi Kafka Topic Operator
 mitigationScore: 2
 impactScore: 8
+reports: 11
 references:
 - https://github.com/strimzi/strimzi-kafka-operator/issues/6046
 applications:
@@ -86,9 +87,18 @@ applications:
 				Mitigation:      "- Add additional CPU resources and restart the Kafka Topic Operator\n- Use the Zookeeper store instead of the Kafka Streams store for the Strimzi Kafka Topic Operator\n",
 				MitigationScore: 2,
 				ImpactScore:     8,
+				Reports:         11,
 				References:      []string{"https://github.com/strimzi/strimzi-kafka-operator/issues/6046"},
 				Applications:    []AstAppT{{Name: "kafka"}},
 			},
+		},
+		{
+			name: "cre id is wrong type",
+			yaml: `
+id: 11
+`,
+			strict:  true,
+			wantErr: ErrUnexpectedType,
 		},
 		{
 			name: "invalid id (too short)",
@@ -131,6 +141,11 @@ title: App CRE
 applications:
   - name: app1
     version: v1
+    processName: nginx
+    processPath: /usr/sbin/nginx
+    containerName: nginx-container
+    imageUrl: nginx:latest
+    repoUrl: github.com/nginx/nginx
   - name: app2
     version: v2
 `,
@@ -139,10 +154,66 @@ applications:
 				Id:    "CRE-8888",
 				Title: "App CRE",
 				Applications: []AstAppT{
-					{Name: "app1", Version: "v1"},
+					{
+						Name:          "app1",
+						Version:       "v1",
+						ProcessName:   "nginx",
+						ProcessPath:   "/usr/sbin/nginx",
+						ContainerName: "nginx-container",
+						ImageUrl:      "nginx:latest",
+						RepoUrl:       "github.com/nginx/nginx",
+					},
 					{Name: "app2", Version: "v2"},
 				},
 			},
+		},
+		{
+			name: "strict app with extra key",
+			yaml: `
+applications:
+  - name: app1
+    unexpected: value
+`,
+			strict:  true,
+			wantErr: ErrUnexpectedKey,
+		},
+		{
+			name: "strict app with extra key non-strict",
+			yaml: `
+applications:
+  - name: app1
+    unexpected: value
+`,
+			strict: false,
+			wants: AstCreT{
+				Applications: []AstAppT{
+					{Name: "app1"},
+				},
+			},
+		},
+		{
+			name: "bad app type",
+			yaml: `
+applications: badtype
+`,
+			wantErr: ErrUnexpectedType,
+		},
+		{
+			name: "bad app value type",
+			yaml: `
+applications:
+  - notamapping
+`,
+			wantErr: ErrUnexpectedType,
+		},
+		{
+			name: "bad app key",
+			yaml: `
+applications:
+  - 11: badkey
+`,
+			strict:  true,
+			wantErr: ErrUnexpectedType,
 		},
 		{
 			name:   "valid severity value",
