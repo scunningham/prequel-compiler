@@ -210,7 +210,6 @@ type AstNegateOptsT struct {
 }
 
 type baseAst struct {
-	ty      AstNodeType
 	scope   AstScopeT
 	address AstNodeAddressT
 	parent  *AstNodeAddressT
@@ -221,7 +220,7 @@ func (b baseAst) Address() AstNodeAddressT {
 }
 
 func (b baseAst) Type() AstNodeType {
-	return b.ty
+	return b.address.Type
 }
 
 func (b baseAst) Scope() AstScopeT {

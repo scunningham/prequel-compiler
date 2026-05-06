@@ -163,7 +163,7 @@ func (p *parserT) constructLeafNode(parent, child ruleState, proto protoNode) As
 	// Construct a placeholder inner node to hold the leaf terms, with the appropriate parent and address.
 	// This will assume the original child's address, and the leaf node will be addressed as a child of this placeholder node.
 	root := &AstInnerNodeT{
-		baseAst: baseAst{ty: proto.ty, address: *child.addr, parent: nil, scope: AstScopeCluster},
+		baseAst: baseAst{address: *child.addr, parent: nil, scope: AstScopeCluster},
 	}
 
 	grandChild := child.pushNode(proto.ty)
@@ -193,7 +193,7 @@ func (p *parserT) _constructLeafNode(parent, child ruleState, proto protoNode) *
 	child.addr.Type = translatedType
 
 	return &AstMatchLeafT{
-		baseAst:      baseAst{ty: translatedType, address: *child.addr, parent: parent.addr, scope: AstScopeNode},
+		baseAst:      baseAst{address: *child.addr, parent: parent.addr, scope: AstScopeNode},
 		Window:       proto.window,
 		Correlations: proto.correlations,
 		Terms:        protoTermsToAstFields(proto.terms),
@@ -205,7 +205,7 @@ func (p *parserT) _constructLeafNode(parent, child ruleState, proto protoNode) *
 func (p *parserT) constructInnerNode(parent, child ruleState, proto protoNode) AstNode {
 
 	return &AstInnerNodeT{
-		baseAst:      baseAst{ty: proto.ty, address: *child.addr, parent: parent.addr, scope: AstScopeCluster},
+		baseAst:      baseAst{address: *child.addr, parent: parent.addr, scope: AstScopeCluster},
 		Window:       proto.window,
 		Correlations: proto.correlations,
 		Terms:        protoTermsToAstTerms(proto.terms),

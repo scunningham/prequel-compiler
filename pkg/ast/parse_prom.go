@@ -18,7 +18,6 @@ func (p *parserT) parsePromQLNode(state ruleState, node ast.Node) (*AstPromT, er
 	var (
 		prom = AstPromT{
 			baseAst: baseAst{
-				ty:      AstNodeTypePromQL,
 				scope:   AstScopeCluster,
 				address: *child.addr,
 				parent:  state.addr,

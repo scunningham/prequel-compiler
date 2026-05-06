@@ -25,7 +25,6 @@ func (p *parserT) parseScriptNode(state ruleState, node ast.Node) (*AstScriptT, 
 	var (
 		script = AstScriptT{
 			baseAst: baseAst{
-				ty:      AstNodeTypeScript,
 				scope:   AstScopeCluster,
 				address: *child.addr,
 				parent:  state.addr,
