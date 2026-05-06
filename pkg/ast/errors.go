@@ -23,6 +23,7 @@ var (
 	ErrBadExtractName  = errors.New("extract name is not valid")
 	ErrBadScriptLang   = errors.New("script language is not valid")
 	ErrBadScriptCode   = errors.New("script code is not valid")
+	ErrBadAnchor       = errors.New("anchor value is out of range")
 )
 
 type ErrRule struct {

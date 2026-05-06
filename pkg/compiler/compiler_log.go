@@ -62,12 +62,12 @@ func ObjLogMatcher(runtime RuntimeI, node *ast.AstMatchLeafT) (*ObjT, error) {
 	obj.Cb = runtime.NewCbMatch(params)
 
 	switch node.Type() {
-	case ast.AstNodeTypeSeq:
+	case ast.AstNodeTypeLogSeq:
 		if obj.Object, err = makeLogSeqObjects(node); err != nil {
 			return nil, err
 		}
 
-	case ast.AstNodeTypeSet:
+	case ast.AstNodeTypeLogSet:
 
 		if obj.Object, err = makeLogSetObjects(node); err != nil {
 			return nil, err

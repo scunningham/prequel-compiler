@@ -61,7 +61,7 @@ func (p *parserT) parseInnerNode(state ruleState, ty AstNodeType, node ast.Node)
 				err := fmt.Errorf("%w: '%s' key is not allowed in this context", ErrUnexpectedKey, key)
 				return nil, p.wrapError(v.Key, err)
 			}
-			if proto.terms, err = p.parseTerms(child, v.Value, false); err != nil {
+			if proto.terms, err = p.parseTerms(child, v.Value, 0); err != nil {
 				return nil, err
 			}
 
@@ -70,14 +70,14 @@ func (p *parserT) parseInnerNode(state ruleState, ty AstNodeType, node ast.Node)
 				err := fmt.Errorf("%w: '%s' key is not allowed in this context", ErrUnexpectedKey, key)
 				return nil, p.wrapError(v.Key, err)
 			}
-			if proto.terms, err = p.parseTerms(child, v.Value, false); err != nil {
+			if proto.terms, err = p.parseTerms(child, v.Value, 0); err != nil {
 				return nil, err
 			}
 
 		case kwNegate:
-			// Defer parsing the negate node until the end in case it occurrs before the matc/order node.
-			// This is necessary to get the addressing consistent; ie. negative terms successively addressed after
-			// normal terms.
+			// Defer parsing the negate node until the end in case it occurs before the match/order node.
+			// This is necessary to get the addressing consistent; ie. negative terms successively addressed
+			// after positive terms.
 			negateNode = v.Value
 
 		case kwCorrelations:
@@ -94,8 +94,11 @@ func (p *parserT) parseInnerNode(state ruleState, ty AstNodeType, node ast.Node)
 	if negateNode != nil {
 		// Fix up the rank on the state to include the already parsed match/order terms,
 		// so that negate terms are ranked after them.
-		negateState := child.setRank(uint32(len(proto.terms)))
-		if proto.negate, err = p.parseTerms(negateState, negateNode, true); err != nil {
+		var (
+			negateOffset = len(proto.terms)
+			negateState  = child.setRank(uint32(negateOffset))
+		)
+		if proto.negate, err = p.parseTerms(negateState, negateNode, negateOffset); err != nil {
 			return nil, err
 		}
 	}
@@ -185,9 +188,9 @@ func (p *parserT) _constructLeafNode(parent, child ruleState, proto protoNode) *
 	translatedType := proto.ty
 	switch proto.ty {
 	case AstNodeTypeSet:
-		translatedType = AstNodeTypeMatchSet
+		translatedType = AstNodeTypeLogSet
 	case AstNodeTypeSeq:
-		translatedType = AstNodeTypeMatchSeq
+		translatedType = AstNodeTypeLogSeq
 	}
 
 	child.addr.Type = translatedType

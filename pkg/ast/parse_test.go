@@ -29,7 +29,7 @@ func TestParseRules(t *testing.T) {
           - value: "test"
         negate:
           - value: "fart"
-            anchor: 1
+            anchor: 0
 `
 
 	r, err := ParseRules([]byte(rule), WithStrict(true))
@@ -129,7 +129,7 @@ func TestParseRules4(t *testing.T) {
           - value: "test"
         negate:
           - value: "fart"
-            anchor: 1
+            anchor: 0
 `
 
 	r, err := ParseRules([]byte(rule), WithStrict(true))

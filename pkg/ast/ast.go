@@ -98,8 +98,8 @@ type AstNodeType int
 const (
 	AstNodeTypeSet AstNodeType = iota
 	AstNodeTypeSeq
-	AstNodeTypeMatchSet
-	AstNodeTypeMatchSeq
+	AstNodeTypeLogSet
+	AstNodeTypeLogSeq
 	AstNodeTypePromQL
 	AstNodeTypeScript
 )
@@ -110,9 +110,9 @@ func (t AstNodeType) String() string {
 		return "machine_set"
 	case AstNodeTypeSeq:
 		return "machine_seq"
-	case AstNodeTypeMatchSet:
+	case AstNodeTypeLogSet:
 		return "log_set"
-	case AstNodeTypeMatchSeq:
+	case AstNodeTypeLogSeq:
 		return "log_seq"
 	case AstNodeTypePromQL:
 		return "promql"

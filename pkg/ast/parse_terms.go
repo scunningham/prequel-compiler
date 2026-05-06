@@ -2,7 +2,6 @@ package ast
 
 import (
 	"fmt"
-	"math"
 	"regexp"
 
 	"github.com/goccy/go-yaml/ast"
@@ -10,7 +9,7 @@ import (
 
 // Terms node expects a sequence of terms,
 
-func (p *parserT) parseTerms(state ruleState, v ast.Node, allowNegate bool) ([]*protoTerm, error) {
+func (p *parserT) parseTerms(state ruleState, v ast.Node, negateOffset int) ([]*protoTerm, error) {
 
 	seq, err := p.nodeToSequence(v)
 	if err != nil {
@@ -24,7 +23,7 @@ func (p *parserT) parseTerms(state ruleState, v ast.Node, allowNegate bool) ([]*
 
 	for i, termNode := range seq.Values {
 
-		term, err := p.parseTerm(state, termNode, allowNegate)
+		term, err := p.parseTerm(state, termNode, negateOffset)
 
 		switch {
 		case err != nil:
@@ -54,10 +53,10 @@ func (p *parserT) parseTerms(state ruleState, v ast.Node, allowNegate bool) ([]*
 
 // A term which can be either a simple string or a mapping.
 
-func (p *parserT) parseTerm(state ruleState, node ast.Node, allowNegate bool) (*protoTerm, error) {
+func (p *parserT) parseTerm(state ruleState, node ast.Node, negateOffset int) (*protoTerm, error) {
 
 	if node.Type() != ast.StringType {
-		return p.parseTermAsMap(state, node, allowNegate)
+		return p.parseTermAsMap(state, node, negateOffset)
 	}
 
 	v, ok := node.(*ast.StringNode)
@@ -98,7 +97,7 @@ func (p *parserT) parseTerm(state ruleState, node ast.Node, allowNegate bool) (*
 //
 //	A term is either a line match, or a recursive struct.
 
-func (p *parserT) parseTermAsMap(state ruleState, node ast.Node, allowNegate bool) (*protoTerm, error) {
+func (p *parserT) parseTermAsMap(state ruleState, node ast.Node, negateOffset int) (*protoTerm, error) {
 
 	mapping, err := p.nodeToMapping(node)
 	if err != nil {
@@ -129,7 +128,7 @@ func (p *parserT) parseTermAsMap(state ruleState, node ast.Node, allowNegate boo
 			if leaf == nil {
 				leaf = &protoField{Count: 1}
 			}
-			if err := p.parseTermField(key, v.Value, leaf, allowNegate); err != nil {
+			if err := p.parseTermField(key, v.Value, leaf, negateOffset > 0); err != nil {
 				return nil, err
 			}
 
@@ -152,14 +151,14 @@ func (p *parserT) parseTermAsMap(state ruleState, node ast.Node, allowNegate boo
 			}
 
 		case kwWindow, kwSlide, kwAnchor, kwAbsolute:
-			if !allowNegate {
+			if negateOffset == 0 {
 				err := fmt.Errorf("%w: negate options are not allowed in this context", ErrUnexpectedKey)
 				return nil, p.wrapError(key, err)
 			}
 			if nOpts == nil {
 				nOpts = &AstNegateOptsT{}
 			}
-			if err = p.parseNegateOpts(key.Value, v.Value, nOpts); err != nil {
+			if err = p.parseNegateOpts(key.Value, v.Value, nOpts, negateOffset); err != nil {
 				return nil, err
 			}
 
@@ -269,7 +268,7 @@ func (p *parserT) parseTermField(key *ast.StringNode, v ast.Node, match *protoFi
 	return err
 }
 
-func (p *parserT) parseNegateOpts(key string, node ast.Node, opts *AstNegateOptsT) error {
+func (p *parserT) parseNegateOpts(key string, node ast.Node, opts *AstNegateOptsT, negateOffset int) error {
 	var err error
 
 	switch key {
@@ -285,8 +284,8 @@ func (p *parserT) parseNegateOpts(key string, node ast.Node, opts *AstNegateOpts
 		switch {
 		case err != nil:
 			// fall through
-		case anchorInt > math.MaxUint32:
-			nerr := fmt.Errorf("%w: anchor value must be a non-negative integer, got %d", ErrUnexpectedType, anchorInt)
+		case anchorInt >= uint64(negateOffset):
+			nerr := fmt.Errorf("%w: anchor value must be in range of [0, %d)", ErrBadAnchor, negateOffset)
 			err = p.wrapError(node, nerr)
 
 		default:
