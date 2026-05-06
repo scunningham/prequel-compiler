@@ -1,11 +1,11 @@
-package parser
+package ast
 
 // State struct for tracking rule metadata, origin count, unique ID generation, depth, and rank during parsing.
 // This is passed through recursive calls to ensure consistent state management and error reporting.
 
 type ruleState struct {
 	meta      *AstMetadataT
-	parent    *AstNodeAddressT
+	addr      *AstNodeAddressT
 	origin    *int
 	idCounter *uint32
 	rank      uint32
@@ -39,17 +39,17 @@ func (s ruleState) nextId() uint32 {
 	return id
 }
 
-func (s ruleState) pushChild(ty AstNodeType) ruleState {
+func (s ruleState) pushNode(ty AstNodeType) ruleState {
 	var (
 		depth     uint32
 		reserveId = s.nextId()
 	)
 
-	if s.parent != nil {
-		depth = s.parent.Depth + 1
+	if s.addr != nil {
+		depth = s.addr.Depth + 1
 	}
 
-	s.parent = &AstNodeAddressT{
+	s.addr = &AstNodeAddressT{
 		Type:     ty,
 		RuleId:   s.meta.Id,
 		RuleHash: s.meta.Hash,

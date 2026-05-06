@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/prequel-dev/prequel-compiler/pkg/parser"
+	"github.com/prequel-dev/prequel-compiler/pkg/ast"
 )
 
 var (
@@ -39,9 +39,9 @@ func NewDefaultPlugin() *DefaultPlugin {
 	return &DefaultPlugin{}
 }
 
-func (p *DefaultPlugin) Compile(runtime RuntimeI, node parser.AstNode) (ObjsT, error) {
+func (p *DefaultPlugin) Compile(runtime RuntimeI, node ast.AstNode) (ObjsT, error) {
 
-	match, ok := node.(*parser.AstMatchLeafT)
+	match, ok := node.(*ast.AstMatchLeafT)
 	if !ok {
 		return nil, fmt.Errorf("%w: %T", ErrUnsupportedAstType, node)
 	}

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/prequel-dev/prequel-compiler/pkg/parser"
+	"github.com/prequel-dev/prequel-compiler/pkg/ast"
 	"github.com/rs/zerolog/log"
 )
 
@@ -30,24 +30,24 @@ func (o ObjTypeT) String() string {
 }
 
 type ObjT struct {
-	Address       parser.AstNodeAddressT
-	ParentAddress *parser.AstNodeAddressT
-	Scope         parser.AstScopeT
-	AbstractType  parser.AstNodeType
+	Address       ast.AstNodeAddressT
+	ParentAddress *ast.AstNodeAddressT
+	Scope         ast.AstScopeT
+	AbstractType  ast.AstNodeType
 	ObjectType    ObjTypeT
-	Event         parser.AstEventT
+	Event         ast.AstEventT
 	Object        any
 	Cb            CallbackT
 }
 
 type compilerOptsT struct {
 	runtime RuntimeI
-	plugins map[parser.AstScopeT]PluginI
+	plugins map[ast.AstScopeT]PluginI
 }
 
 type CompilerOptT func(*compilerOptsT)
 type PluginI interface {
-	Compile(runtime RuntimeI, node parser.AstNode) (ObjsT, error)
+	Compile(runtime RuntimeI, node ast.AstNode) (ObjsT, error)
 }
 
 func WithRuntime(cb RuntimeI) CompilerOptT {
@@ -56,7 +56,7 @@ func WithRuntime(cb RuntimeI) CompilerOptT {
 	}
 }
 
-func WithPlugin(scope parser.AstScopeT, plugin PluginI) CompilerOptT {
+func WithPlugin(scope ast.AstScopeT, plugin PluginI) CompilerOptT {
 	return func(o *compilerOptsT) {
 		o.plugins[scope] = plugin
 	}
@@ -65,7 +65,7 @@ func WithPlugin(scope parser.AstScopeT, plugin PluginI) CompilerOptT {
 func parseOpts(opts []CompilerOptT) compilerOptsT {
 
 	o := compilerOptsT{
-		plugins: map[parser.AstScopeT]PluginI{parser.AstScopeNode: defaultPlugin},
+		plugins: map[ast.AstScopeT]PluginI{ast.AstScopeNode: defaultPlugin},
 		runtime: defaultRuntime,
 	}
 	for _, opt := range opts {
@@ -74,9 +74,9 @@ func parseOpts(opts []CompilerOptT) compilerOptsT {
 	return o
 }
 
-func Compile(data []byte, scope parser.AstScopeT, opts ...CompilerOptT) (ObjsT, error) {
+func Compile(data []byte, scope ast.AstScopeT, opts ...CompilerOptT) (ObjsT, error) {
 
-	rules, err := parser.ParseRules(data)
+	rules, err := ast.ParseRules(data)
 	if err != nil {
 		return nil, err
 	}
@@ -84,12 +84,12 @@ func Compile(data []byte, scope parser.AstScopeT, opts ...CompilerOptT) (ObjsT, 
 	return CompileRules(rules, scope, opts...)
 }
 
-func CompileRule(rule parser.AstRuleT, scope parser.AstScopeT, opts ...CompilerOptT) (ObjsT, error) {
+func CompileRule(rule ast.AstRuleT, scope ast.AstScopeT, opts ...CompilerOptT) (ObjsT, error) {
 	o := parseOpts(opts)
 	return compileRule(o, rule, scope)
 }
 
-func CompileRules(rules []parser.AstRuleT, scope parser.AstScopeT, opts ...CompilerOptT) (ObjsT, error) {
+func CompileRules(rules []ast.AstRuleT, scope ast.AstScopeT, opts ...CompilerOptT) (ObjsT, error) {
 	o := parseOpts(opts)
 
 	var (
@@ -109,13 +109,13 @@ func CompileRules(rules []parser.AstRuleT, scope parser.AstScopeT, opts ...Compi
 	return outObjs, errors.Join(errList...)
 }
 
-func compileRule(o compilerOptsT, rule parser.AstRuleT, scope parser.AstScopeT) (ObjsT, error) {
+func compileRule(o compilerOptsT, rule ast.AstRuleT, scope ast.AstScopeT) (ObjsT, error) {
 
 	var (
 		outObjs ObjsT
 	)
 
-	compile := func(node parser.AstNode, _ *parser.AstNegateOptsT) error {
+	compile := func(node ast.AstNode, _ *ast.AstNegateOptsT) error {
 
 		if node.Scope() != scope {
 			return nil
@@ -141,8 +141,8 @@ func compileRule(o compilerOptsT, rule parser.AstRuleT, scope parser.AstScopeT) 
 		return nil, err
 	}
 
-	sortObjs(outObjs, parser.AstNodeTypeSeq)
-	sortObjs(outObjs, parser.AstNodeTypeSet)
+	sortObjs(outObjs, ast.AstNodeTypeSeq)
+	sortObjs(outObjs, ast.AstNodeTypeSet)
 
 	for _, obj := range outObjs {
 		log.Debug().
@@ -155,7 +155,7 @@ func compileRule(o compilerOptsT, rule parser.AstRuleT, scope parser.AstScopeT) 
 	return outObjs, nil
 }
 
-func NewObj(node parser.AstNode, objType ObjTypeT) *ObjT {
+func NewObj(node ast.AstNode, objType ObjTypeT) *ObjT {
 
 	return &ObjT{
 		Address:       node.Address(),
@@ -167,7 +167,7 @@ func NewObj(node parser.AstNode, objType ObjTypeT) *ObjT {
 }
 
 // Should we sort by object type?
-func sortObjs(items []*ObjT, t parser.AstNodeType) {
+func sortObjs(items []*ObjT, t ast.AstNodeType) {
 	sort.SliceStable(items, func(i, j int) bool {
 		if items[i].AbstractType == t && items[j].AbstractType != t {
 			return true

@@ -1,4 +1,4 @@
-package parser
+package ast
 
 import (
 	"fmt"
@@ -346,6 +346,23 @@ func TestNeg1(t *testing.T) {
 	fmt.Println(Draw(tt[0], WithColor()))
 }
 
+func TestSuccessLogSetSingle3_(t *testing.T) {
+
+	rule, err := rewriteAnchor([]byte(TestSuccessLogSetSingle3))
+	if err != nil {
+		t.Fatalf("rewriteAnchor failed: %v", err)
+	}
+
+	fmt.Println(string(rule))
+
+	tt, err := ParseRules([]byte(rule), WithStrict(true))
+	if err != nil {
+		t.Fatalf("ParseRules failed: %v", err)
+	}
+
+	fmt.Println(Draw(tt[0], WithColor()))
+}
+
 // func TestNeg1Old(t *testing.T) {
 // 	rule := TestSuccessNegateOptions2Old
 
@@ -494,4 +511,21 @@ terms:
       order:
         - value: "Killing"
         - value: "in the name of the king"	
+`
+
+var TestSuccessLogSetSingle3 = `
+rules:
+  - cre:
+      id: cre-2024-006
+    metadata:
+      id: "J7uRQTGpGMyL1iFpssnBeS"
+      hash: rdJLgqYgkEp8jg8Qks1qiqrdJLgqYgkEp8jg8Qks1qiq
+      gen: 1
+    rule:
+      set:
+        event:
+          source: rabbitmq
+          origin: true
+        match:
+          - Discarding message
 `

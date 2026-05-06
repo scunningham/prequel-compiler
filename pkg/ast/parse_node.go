@@ -1,4 +1,4 @@
-package parser
+package ast
 
 import (
 	"fmt"
@@ -23,8 +23,8 @@ func (p *parserT) parseInnerNode(state ruleState, ty AstNodeType, node ast.Node)
 
 	// Sanity checks
 	switch {
-	case state.parent != nil && state.parent.Depth > maxDepth:
-		err := fmt.Errorf("%w: maximum depth exceeded: %d/%d", ErrUnexpectedType, state.parent.Depth, maxDepth)
+	case state.addr != nil && state.addr.Depth > maxDepth:
+		err := fmt.Errorf("%w: maximum depth exceeded: %d/%d", ErrUnexpectedType, state.addr.Depth, maxDepth)
 		return nil, p.wrapError(node, err)
 
 	case state.rank > maxRank:
@@ -34,7 +34,7 @@ func (p *parserT) parseInnerNode(state ruleState, ty AstNodeType, node ast.Node)
 
 	var (
 		proto      = protoNode{ty: ty}
-		child      = state.pushChild(ty)
+		child      = state.pushNode(ty)
 		negateNode ast.Node
 	)
 
@@ -100,12 +100,12 @@ func (p *parserT) parseInnerNode(state ruleState, ty AstNodeType, node ast.Node)
 		}
 	}
 
-	return p.constructNode(child.parent, state, mapping, proto)
+	return p.constructNode(state, child, mapping, proto)
 }
 
 // Interpret the prototype and construct the appropriate AST node (SetNode, SequenceNode, etc).
 
-func (p *parserT) constructNode(addr *AstNodeAddressT, state ruleState, mapping *ast.MappingNode, proto protoNode) (AstNode, error) {
+func (p *parserT) constructNode(parent, child ruleState, mapping *ast.MappingNode, proto protoNode) (AstNode, error) {
 
 	// Sanity check; at least something has to match.
 	if len(proto.terms) == 0 {
@@ -139,38 +139,76 @@ func (p *parserT) constructNode(addr *AstNodeAddressT, state ruleState, mapping 
 
 	var node AstNode
 
-	if allLeaves {
-		if proto.event == nil {
-			err := fmt.Errorf("%w: an event is required when using leaf terms", ErrMissingKey)
-			return nil, p.wrapError(mapping, err)
-		}
-
-		// Translate node type
-		switch proto.ty {
-		case AstNodeTypeSet:
-			proto.ty = AstNodeTypeMatchSet
-		case AstNodeTypeSeq:
-			proto.ty = AstNodeTypeMatchSeq
-		}
-
-		node = &AstMatchLeafT{
-			baseAst:      baseAst{ty: proto.ty, address: *addr, parent: state.parent, scope: AstScopeNode},
-			Window:       proto.window,
-			Correlations: proto.correlations,
-			Terms:        protoTermsToAstFields(proto.terms),
-			Negate:       protoTermsToAstFields(proto.negate),
-			Event:        *proto.event,
-		}
-	} else {
-
-		node = &AstInnerNodeT{
-			baseAst:      baseAst{ty: proto.ty, address: *addr, parent: state.parent, scope: AstScopeCluster},
-			Window:       proto.window,
-			Correlations: proto.correlations,
-			Terms:        protoTermsToAstTerms(proto.terms),
-			Negate:       protoTermsToAstTerms(proto.negate),
-		}
+	switch {
+	case !allLeaves:
+		node = p.constructInnerNode(parent, child, proto)
+	default:
+		node = p.constructLeafNode(parent, child, proto)
 	}
 
 	return node, nil
+}
+
+func (p *parserT) constructLeafNode(parent, child ruleState, proto protoNode) AstNode {
+
+	// A non root leaft node is constructed as a normal leaf node with the appropriate parent and address.
+	if child.addr.Depth > 0 {
+		return p._constructLeafNode(parent, child, proto)
+	}
+
+	// Leaf nodes are not allowed at the root level;
+	// they must be contained within an Cluster scoped inner node.
+	// This allows the engine to evaluate the match at the cluster level where the publish logic is executing.
+
+	// Construct a placeholder inner node to hold the leaf terms, with the appropriate parent and address.
+	// This will assume the original child's address, and the leaf node will be addressed as a child of this placeholder node.
+	root := &AstInnerNodeT{
+		baseAst: baseAst{ty: proto.ty, address: *child.addr, parent: nil, scope: AstScopeCluster},
+	}
+
+	grandChild := child.pushNode(proto.ty)
+
+	leaf := p._constructLeafNode(child, grandChild, proto)
+
+	term := AstTermT{
+		Term: leaf,
+	}
+
+	root.Terms = []AstTermT{term}
+
+	return root
+}
+
+func (p *parserT) _constructLeafNode(parent, child ruleState, proto protoNode) *AstMatchLeafT {
+
+	// Translate node type from proto to the appropriate match type; ie. Set -> MatchSet, Seq -> MatchSeq.
+	translatedType := proto.ty
+	switch proto.ty {
+	case AstNodeTypeSet:
+		translatedType = AstNodeTypeMatchSet
+	case AstNodeTypeSeq:
+		translatedType = AstNodeTypeMatchSeq
+	}
+
+	child.addr.Type = translatedType
+
+	return &AstMatchLeafT{
+		baseAst:      baseAst{ty: translatedType, address: *child.addr, parent: parent.addr, scope: AstScopeNode},
+		Window:       proto.window,
+		Correlations: proto.correlations,
+		Terms:        protoTermsToAstFields(proto.terms),
+		Negate:       protoTermsToAstFields(proto.negate),
+		Event:        *proto.event,
+	}
+}
+
+func (p *parserT) constructInnerNode(parent, child ruleState, proto protoNode) AstNode {
+
+	return &AstInnerNodeT{
+		baseAst:      baseAst{ty: proto.ty, address: *child.addr, parent: parent.addr, scope: AstScopeCluster},
+		Window:       proto.window,
+		Correlations: proto.correlations,
+		Terms:        protoTermsToAstTerms(proto.terms),
+		Negate:       protoTermsToAstTerms(proto.negate),
+	}
 }

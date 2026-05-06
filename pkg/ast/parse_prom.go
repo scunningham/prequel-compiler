@@ -1,4 +1,4 @@
-package parser
+package ast
 
 import (
 	"fmt"
@@ -13,15 +13,15 @@ func (p *parserT) parsePromQLNode(state ruleState, node ast.Node) (*AstPromT, er
 		return nil, err
 	}
 
-	child := state.pushChild(AstNodeTypePromQL)
+	child := state.pushNode(AstNodeTypePromQL)
 
 	var (
 		prom = AstPromT{
 			baseAst: baseAst{
 				ty:      AstNodeTypePromQL,
 				scope:   AstScopeCluster,
-				address: *child.parent,
-				parent:  state.parent,
+				address: *child.addr,
+				parent:  state.addr,
 			},
 		}
 	)

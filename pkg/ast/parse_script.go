@@ -1,4 +1,4 @@
-package parser
+package ast
 
 import (
 	"fmt"
@@ -20,15 +20,15 @@ func (p *parserT) parseScriptNode(state ruleState, node ast.Node) (*AstScriptT, 
 		return nil, err
 	}
 
-	child := state.pushChild(AstNodeTypeScript)
+	child := state.pushNode(AstNodeTypeScript)
 
 	var (
 		script = AstScriptT{
 			baseAst: baseAst{
 				ty:      AstNodeTypeScript,
 				scope:   AstScopeCluster,
-				address: *child.parent,
-				parent:  state.parent,
+				address: *child.addr,
+				parent:  state.addr,
 			},
 		}
 	)

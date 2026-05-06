@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/prequel-dev/prequel-compiler/pkg/parser"
+	"github.com/prequel-dev/prequel-compiler/pkg/ast"
 )
 
 func TestCompile(t *testing.T) {
@@ -32,7 +32,7 @@ func TestCompile(t *testing.T) {
             anchor: 1
 `
 
-	xx, err := Compile([]byte(rule), parser.AstScopeNode)
+	xx, err := Compile([]byte(rule), ast.AstScopeNode)
 	if err != nil {
 		t.Fatal(err)
 	}

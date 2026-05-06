@@ -1,4 +1,4 @@
-package parser
+package ast
 
 import (
 	"time"
@@ -63,6 +63,10 @@ func (f *protoField) ToField(nOpts *AstNegateOptsT) AstFieldT {
 		Field:      f.Field,
 		Extracts:   f.Extract,
 		NegateOpts: nOpts,
+	}
+
+	if t.Count == 0 {
+		t.Count = 1
 	}
 
 	switch {

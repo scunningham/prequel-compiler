@@ -3,12 +3,12 @@ package compiler
 import (
 	"fmt"
 
-	"github.com/prequel-dev/prequel-compiler/pkg/parser"
+	"github.com/prequel-dev/prequel-compiler/pkg/ast"
 	"github.com/prequel-dev/prequel-logmatch/pkg/match"
 	"github.com/rs/zerolog/log"
 )
 
-func toLogResets(terms []parser.AstFieldT) []match.ResetT {
+func toLogResets(terms []ast.AstFieldT) []match.ResetT {
 	resets := make([]match.ResetT, 0, len(terms))
 	for _, term := range terms {
 
@@ -32,7 +32,7 @@ func toLogResets(terms []parser.AstFieldT) []match.ResetT {
 	return resets
 }
 
-func toLogTerms(fields []parser.AstFieldT) []match.TermT {
+func toLogTerms(fields []ast.AstFieldT) []match.TermT {
 	terms := make([]match.TermT, 0, len(fields))
 	for _, field := range fields {
 		// match interface does not yet support explicit counts, do dupe.
@@ -44,7 +44,7 @@ func toLogTerms(fields []parser.AstFieldT) []match.TermT {
 	return terms
 }
 
-func ObjLogMatcher(runtime RuntimeI, node *parser.AstMatchLeafT) (*ObjT, error) {
+func ObjLogMatcher(runtime RuntimeI, node *ast.AstMatchLeafT) (*ObjT, error) {
 	var (
 		err error
 		obj = NewObj(node, ObjTypeMatcher)
@@ -62,12 +62,12 @@ func ObjLogMatcher(runtime RuntimeI, node *parser.AstMatchLeafT) (*ObjT, error) 
 	obj.Cb = runtime.NewCbMatch(params)
 
 	switch node.Type() {
-	case parser.AstNodeTypeSeq:
+	case ast.AstNodeTypeSeq:
 		if obj.Object, err = makeLogSeqObjects(node); err != nil {
 			return nil, err
 		}
 
-	case parser.AstNodeTypeSet:
+	case ast.AstNodeTypeSet:
 
 		if obj.Object, err = makeLogSetObjects(node); err != nil {
 			return nil, err
@@ -80,7 +80,7 @@ func ObjLogMatcher(runtime RuntimeI, node *parser.AstMatchLeafT) (*ObjT, error) 
 	return obj, nil
 }
 
-func makeLogSeqObjects(node *parser.AstMatchLeafT) (any, error) {
+func makeLogSeqObjects(node *ast.AstMatchLeafT) (any, error) {
 
 	switch {
 	case len(node.Negate) > 0:
@@ -98,7 +98,7 @@ func makeLogSeqObjects(node *parser.AstMatchLeafT) (any, error) {
 	}
 }
 
-func makeLogSetObjects(node *parser.AstMatchLeafT) (any, error) {
+func makeLogSetObjects(node *ast.AstMatchLeafT) (any, error) {
 
 	switch {
 	case len(node.Negate) > 0:

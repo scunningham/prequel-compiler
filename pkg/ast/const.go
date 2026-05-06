@@ -1,4 +1,4 @@
-package parser
+package ast
 
 const (
 	maxRank  = 2048

@@ -3,17 +3,17 @@ package compiler
 import (
 	"context"
 
-	"github.com/prequel-dev/prequel-compiler/pkg/parser"
+	"github.com/prequel-dev/prequel-compiler/pkg/ast"
 )
 
 type MatchParamsT struct {
-	Address       parser.AstNodeAddressT
-	ParentAddress *parser.AstNodeAddressT
+	Address       ast.AstNodeAddressT
+	ParentAddress *ast.AstNodeAddressT
 	Origin        bool
 }
 
 type AssertParamsT struct {
-	Address parser.AstNodeAddressT
+	Address ast.AstNodeAddressT
 }
 
 type CallbackT func(ctx context.Context, param any) error
