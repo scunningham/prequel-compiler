@@ -1,15 +1,43 @@
 package ast
 
-type ParseOpt func(*parserT)
+type ParseOpt func(*optT)
+
+type optT struct {
+	strict          bool
+	luaValidator    ValidatorFunc
+	promQLValidator ValidatorFunc
+}
 
 func WithStrict(strict bool) ParseOpt {
-	return func(opts *parserT) {
+	return func(opts *optT) {
 		opts.strict = strict
 	}
 }
 
-func applyOpts(parser *parserT, opts ...ParseOpt) {
-	for _, opt := range opts {
-		opt(parser)
+type ValidatorFunc func(string) error
+
+func WithLuaValidator(validator ValidatorFunc) ParseOpt {
+	return func(opts *optT) {
+		opts.luaValidator = validator
 	}
+}
+
+func WithPromQLValidator(validator ValidatorFunc) ParseOpt {
+	return func(opts *optT) {
+		opts.promQLValidator = validator
+	}
+}
+
+var stubValidator = func(string) error { return nil }
+
+func parseOpts(opts ...ParseOpt) optT {
+	opt := optT{
+		strict:          false,
+		luaValidator:    stubValidator,
+		promQLValidator: stubValidator,
+	}
+	for _, f := range opts {
+		f(&opt)
+	}
+	return opt
 }

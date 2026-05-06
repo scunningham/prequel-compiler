@@ -110,7 +110,7 @@ func (p *parserT) parseScriptCode(node ast.Node) (string, error) {
 	}
 
 	// Only Lua supported for now, so validate as Lua code
-	if err := LuaValidator(s); err != nil {
+	if err := p.validateLua(s); err != nil {
 		return "", p.wrapError(node, fmt.Errorf("%w: invalid Lua code: %w", ErrBadScriptCode, err))
 	}
 

@@ -67,7 +67,7 @@ func (p *parserT) parsePromExpr(node ast.Node) (string, error) {
 		return "", err
 	}
 
-	if err := PromQLValidator(s); err != nil {
+	if err := p.validatePromQL(s); err != nil {
 		return "", err
 	}
 	return s, nil

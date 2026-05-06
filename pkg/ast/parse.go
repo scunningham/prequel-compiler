@@ -10,13 +10,20 @@ import (
 )
 
 type parserT struct {
-	strict bool
+	strict         bool
+	validateLua    ValidatorFunc
+	validatePromQL ValidatorFunc
 }
 
 func ParseRules(yamlInput []byte, opts ...ParseOpt) ([]AstRuleT, error) {
+	o := parseOpts(opts...)
 
-	p := &parserT{}
-	applyOpts(p, opts...)
+	p := parserT{
+		strict:         o.strict,
+		validateLua:    o.luaValidator,
+		validatePromQL: o.promQLValidator,
+	}
+
 	return p.parse(yamlInput)
 }
 
