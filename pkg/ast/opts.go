@@ -1,6 +1,9 @@
 package ast
 
-type ParseOpt func(*optT)
+type (
+	ParseOpt      func(*optT)
+	ValidatorFunc func(string) error
+)
 
 type optT struct {
 	strict          bool
@@ -13,8 +16,6 @@ func WithStrict(strict bool) ParseOpt {
 		opts.strict = strict
 	}
 }
-
-type ValidatorFunc func(string) error
 
 func WithLuaValidator(validator ValidatorFunc) ParseOpt {
 	return func(opts *optT) {

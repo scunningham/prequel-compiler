@@ -7,9 +7,7 @@ import (
 	"github.com/goccy/go-yaml/ast"
 )
 
-var (
-	validBase58Regex = regexp.MustCompile(`^[1-9A-Za-z]{12,}$`)
-)
+var validBase58Regex = regexp.MustCompile(`^[1-9A-Za-z]{12,}$`)
 
 func (p *parserT) parseMetadataNode(node ast.Node) (*AstMetadataT, error) {
 

@@ -144,14 +144,6 @@ func compileRule(o compilerOptsT, rule ast.AstRuleT, scope ast.AstScopeT) (ObjsT
 	sortObjs(outObjs, ast.AstNodeTypeSeq)
 	sortObjs(outObjs, ast.AstNodeTypeSet)
 
-	for _, obj := range outObjs {
-		log.Debug().
-			Str("abstract_type", obj.AbstractType.String()).
-			Str("abstract_address", obj.Address.String()).
-			Str("object_type", obj.ObjectType.String()).
-			Msg("Compiled object")
-	}
-
 	return outObjs, nil
 }
 

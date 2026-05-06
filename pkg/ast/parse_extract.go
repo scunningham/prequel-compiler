@@ -7,9 +7,7 @@ import (
 	"github.com/goccy/go-yaml/ast"
 )
 
-var (
-	validateExtractName = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9_]*$`)
-)
+var validateExtractName = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9_]*$`)
 
 func (p *parserT) parseExtracts(node ast.Node) ([]AstExtractT, error) {
 
