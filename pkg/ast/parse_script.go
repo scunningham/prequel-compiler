@@ -13,6 +13,10 @@ import (
 // 	Input    *ParseTermT `yaml:"input"`              // Required input
 // }
 
+const (
+	scriptLua = "lua"
+)
+
 func (p *parserT) parseScriptNode(state ruleState, node ast.Node) (*AstScriptT, error) {
 
 	mapping, err := p.nodeToMapping(node)
@@ -42,12 +46,10 @@ func (p *parserT) parseScriptNode(state ruleState, node ast.Node) (*AstScriptT, 
 		switch key {
 
 		case kwScriptCode:
-			script.Code, err = p.nodeToString(v.Value)
-			// TODO: validate script code here
+			script.Code, err = p.parseScriptCode(v.Value)
 
 		case kwScriptLang:
-			script.Language, err = p.nodeToString(v.Value)
-			// TODO: validate supported languages here
+			script.Language, err = p.parseScriptLang(v.Value)
 
 		case kwScriptTimeout:
 			script.Timeout, err = p.nodeToDuration(v.Value)
@@ -72,4 +74,45 @@ func (p *parserT) parseScriptNode(state ruleState, node ast.Node) (*AstScriptT, 
 func (p *parserT) parseScriptInput(state ruleState, node ast.Node) (AstNode, error) {
 
 	return p.parseRootNode(state, node)
+}
+
+func (p *parserT) parseScriptLang(node ast.Node) (string, error) {
+
+	s, err := p.nodeToString(node)
+	if err != nil {
+		return "", err
+	}
+
+	switch s {
+	case scriptLua:
+		// Fall through
+
+	case "":
+		if p.strict {
+			err = fmt.Errorf("%w: script language cannot be empty", ErrBadScriptLang)
+			return "", p.wrapError(node, err)
+		}
+
+	default:
+		err = fmt.Errorf("%w: unsupported script language: %s", ErrBadScriptLang, s)
+		return "", p.wrapError(node, err)
+	}
+
+	return s, nil
+
+}
+
+func (p *parserT) parseScriptCode(node ast.Node) (string, error) {
+
+	s, err := p.nodeToString(node)
+	if err != nil {
+		return "", err
+	}
+
+	// Only Lua supported for now, so validate as Lua code
+	if err := LuaValidator(s); err != nil {
+		return "", p.wrapError(node, fmt.Errorf("%w: invalid Lua code: %w", ErrBadScriptCode, err))
+	}
+
+	return s, nil
 }

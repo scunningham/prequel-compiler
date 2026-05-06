@@ -2,8 +2,13 @@ package ast
 
 import (
 	"fmt"
+	"regexp"
 
 	"github.com/goccy/go-yaml/ast"
+)
+
+var (
+	validBase58Regex = regexp.MustCompile(`^[1-9A-Za-z]{12,}$`)
 )
 
 func (p *parserT) parseMetadataNode(node ast.Node) (*AstMetadataT, error) {
@@ -62,11 +67,9 @@ func (p *parserT) parseIdNode(v ast.Node) (string, error) {
 	}
 
 	// Expect string to be a randomized 16 byte wide base58 encoded string.
-	// This is not a hard requirement, but implies a wide enough value to avoid collisions.
-	// For this valdiation, we will just check the size.
-	if p.strict && len(s) < 16 {
-		err := fmt.Errorf("%w: id value must at least 16 characters", ErrBadIdentifier)
-		return "", p.wrapError(v, err)
+	// Ignore strict here; a valid hash is required for correct operation.
+	if !validBase58Regex.MatchString(s) {
+		return "", p.wrapError(v, ErrBadIdentifier)
 	}
 	return s, nil
 }
@@ -77,9 +80,9 @@ func (p *parserT) parseHash(v ast.Node) (string, error) {
 		return "", err
 	}
 	// Expect base58 encoded sha256 hash.
-	if p.strict && (len(s) < 32 || len(s) > 44) {
-		err := fmt.Errorf("%w: hash value must be at least 32 characters", ErrBadHash)
-		return "", p.wrapError(v, err)
+	// Ignore strict here; a valid hash is required for correct operation.
+	if !validBase58Regex.MatchString(s) {
+		return "", p.wrapError(v, ErrBadHash)
 	}
 	return s, nil
 }

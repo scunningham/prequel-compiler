@@ -2,8 +2,13 @@ package ast
 
 import (
 	"fmt"
+	"regexp"
 
 	"github.com/goccy/go-yaml/ast"
+)
+
+var (
+	validCreIdRegex = regexp.MustCompile(`^[A-Za-z0-9-]{4,}$`)
 )
 
 func (p *parserT) parseCreNode(node ast.Node) (*AstCreT, error) {
@@ -26,7 +31,7 @@ func (p *parserT) parseCreNode(node ast.Node) (*AstCreT, error) {
 
 		switch key {
 		case kwCreId:
-			cre.Id, err = p.nodeToString(v.Value)
+			cre.Id, err = p.parseCreId(v.Value)
 
 		case kwSeverity:
 			cre.Severity, err = p.parseSeverityNode(v.Value)
@@ -82,6 +87,19 @@ func (p *parserT) parseCreNode(node ast.Node) (*AstCreT, error) {
 	}
 
 	return &cre, nil
+}
+
+func (p *parserT) parseCreId(v ast.Node) (string, error) {
+	s, err := p.nodeToString(v)
+	if err != nil {
+		return "", err
+	}
+
+	if p.strict && !validCreIdRegex.MatchString(s) {
+		err := fmt.Errorf("%w: id value must be at least 4 characters and contain only letters, numbers, or hyphens", ErrBadIdentifier)
+		return "", p.wrapError(v, err)
+	}
+	return s, nil
 }
 
 func (p *parserT) parseSeverityNode(v ast.Node) (uint, error) {

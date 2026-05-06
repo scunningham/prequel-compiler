@@ -20,6 +20,9 @@ var (
 	ErrOverflow        = errors.New("value overflow")
 	ErrMultipleOrigin  = errors.New("multiple origin events are not allowed")
 	ErrUnknownNodeType = errors.New("unknown node type")
+	ErrBadExtractName  = errors.New("extract name is not valid")
+	ErrBadScriptLang   = errors.New("script language is not valid")
+	ErrBadScriptCode   = errors.New("script code is not valid")
 )
 
 type ErrRule struct {

@@ -35,8 +35,7 @@ func (p *parserT) parsePromQLNode(state ruleState, node ast.Node) (*AstPromT, er
 		switch key {
 
 		case kwPromExpr:
-			prom.Expr, err = p.nodeToString(v.Value)
-			// TODO: validate promql expression here
+			prom.Expr, err = p.parsePromExpr(v.Value)
 
 		case kwPromInterval:
 			prom.Interval, err = p.nodeToDurationPositive(v.Value)
@@ -59,4 +58,17 @@ func (p *parserT) parsePromQLNode(state ruleState, node ast.Node) (*AstPromT, er
 	}
 
 	return &prom, nil
+}
+
+func (p *parserT) parsePromExpr(node ast.Node) (string, error) {
+
+	s, err := p.nodeToString(node)
+	if err != nil {
+		return "", err
+	}
+
+	if err := PromQLValidator(s); err != nil {
+		return "", err
+	}
+	return s, nil
 }

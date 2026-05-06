@@ -7,6 +7,10 @@ import (
 	"github.com/goccy/go-yaml/ast"
 )
 
+var (
+	validateExtractName = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9_]*$`)
+)
+
 func (p *parserT) parseExtracts(node ast.Node) ([]AstExtractT, error) {
 
 	seq, err := p.nodeToSequence(node)
@@ -52,7 +56,7 @@ func (p *parserT) parseExtractNode(node ast.Node) (*AstExtractT, error) {
 
 		switch key {
 		case kwExtractName:
-			extract.Name, err = p.nodeToString(v.Value)
+			extract.Name, err = p.parseExtractName(v.Value)
 
 		case kwExtractJq:
 			if hasValue {
@@ -85,4 +89,20 @@ func (p *parserT) parseExtractNode(node ast.Node) (*AstExtractT, error) {
 	}
 
 	return &extract, nil
+}
+
+func (p *parserT) parseExtractName(v ast.Node) (string, error) {
+
+	s, err := p.nodeToString(v)
+	if err != nil {
+		return "", err
+	}
+
+	// Ignore strict here; a valid extract name is required for correct operation.
+	if !validateExtractName.MatchString(s) {
+		err := fmt.Errorf("%w: extract name must start with a letter and contain only letters, numbers, or underscores", ErrBadExtractName)
+		return "", p.wrapError(v, err)
+	}
+	return s, nil
+
 }

@@ -1,6 +1,6 @@
 module github.com/prequel-dev/prequel-compiler
 
-go 1.25.0
+go 1.26
 
 require (
 	github.com/goccy/go-yaml v1.19.2
