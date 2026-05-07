@@ -2,6 +2,7 @@ package ast
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/goccy/go-yaml/ast"
 )
@@ -52,7 +53,7 @@ func (p *parserT) parseInnerNode(state ruleState, ty AstNodeType, node ast.Node)
 			}
 
 		case kwWindow:
-			if proto.window, err = p.nodeToDurationPositive(v.Value); err != nil {
+			if proto.window, err = p.parseWindow(v.Value); err != nil {
 				return nil, err
 			}
 
@@ -91,6 +92,15 @@ func (p *parserT) parseInnerNode(state ruleState, ty AstNodeType, node ast.Node)
 		}
 	}
 
+	// Sanity checks
+	switch {
+	case len(proto.terms) == 0:
+		// at least something has to match.
+		return nil, p.wrapErrorParent(mapping, ErrMissingTerm)
+	case ty == AstNodeTypeSeq && len(proto.terms) == 1 && proto.terms[0].count() <= 1:
+		return nil, p.wrapError(findKey(mapping, kwOrder), ErrShortSequence)
+	}
+
 	if negateNode != nil {
 		// Fix up the rank on the state to include the already parsed match/order terms,
 		// so that negate terms are ranked after them.
@@ -106,15 +116,20 @@ func (p *parserT) parseInnerNode(state ruleState, ty AstNodeType, node ast.Node)
 	return p.constructNode(state, child, mapping, proto)
 }
 
+func (p *parserT) parseWindow(node ast.Node) (time.Duration, error) {
+	window, err := p.nodeToDuration(node)
+	if err != nil {
+		return 0, err
+	}
+	if window < 0 {
+		return 0, p.wrapError(node, ErrorWindowNegative)
+	}
+	return window, nil
+}
+
 // Interpret the prototype and construct the appropriate AST node (SetNode, SequenceNode, etc).
 
 func (p *parserT) constructNode(parent, child ruleState, mapping *ast.MappingNode, proto protoNode) (AstNode, error) {
-
-	// Sanity check; at least something has to match.
-	if len(proto.terms) == 0 {
-		err := fmt.Errorf("%w: a %s node must contain at least one term", ErrMissingKey, proto.ty.String())
-		return nil, p.wrapError(mapping, err)
-	}
 
 	// If there are negate terms, they must either all be leaf terms or all inner node terms,
 	// and they must match the type of the match/order terms.
@@ -123,19 +138,18 @@ func (p *parserT) constructNode(parent, child ruleState, mapping *ast.MappingNod
 	if len(proto.negate) > 0 {
 		if negateAllLeaves := proto.negate[0].leaf != nil; allLeaves != negateAllLeaves {
 			err := fmt.Errorf("%w: match terms and negate terms must both be either leaves or inner nodes", ErrUnexpectedType)
-			return nil, p.wrapError(mapping, err)
+			return nil, p.wrapErrorParent(mapping, err)
 		}
 	}
 
 	// Confirm that the event key is set if required, and not set otherwise.
 	switch {
 	case allLeaves && proto.event == nil:
-		err := fmt.Errorf("%w: an event is required when using leaf terms", ErrMissingKey)
-		return nil, p.wrapError(mapping, err)
+		return nil, p.wrapErrorParent(mapping, ErrMissingEvent)
 
 	case !allLeaves && proto.event != nil:
 		err := fmt.Errorf("%w: an event is not allowed when using inner node terms", ErrUnexpectedKey)
-		return nil, p.wrapError(mapping, err)
+		return nil, p.wrapError(findKey(mapping, kwEvent), err)
 	}
 
 	// TODO: Validate anchors is negate terms; should be in range of [1, len(terms)-1]
@@ -169,7 +183,7 @@ func (p *parserT) constructLeafNode(parent, child ruleState, proto protoNode) As
 		baseAst: baseAst{address: *child.addr, parent: nil, scope: AstScopeCluster},
 	}
 
-	grandChild := child.pushNode(proto.ty)
+	grandChild := child.pushNode(AstNodeTypeSet) // Only sets support 1 term.
 
 	leaf := p._constructLeafNode(child, grandChild, proto)
 

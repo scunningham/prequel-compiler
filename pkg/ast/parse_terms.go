@@ -120,6 +120,16 @@ func (p *parserT) parseTermAsMap(state ruleState, node ast.Node, negateOffset in
 
 		switch key.Value {
 
+		case kwSet, kwSequence, kwPromQL, kwScript:
+			if child != nil || leaf != nil {
+				err := fmt.Errorf("%w: multiple term keys found in term definition", ErrUnexpectedKey)
+				return nil, p.wrapError(v.Key, err)
+			}
+			child, err = p.parseTermChild(state, key, v.Value, nOpts)
+			if err != nil {
+				return nil, err
+			}
+
 		case kwField, kwValue, kwJq, kwRegex, kwCount, kwExtract:
 			if child != nil {
 				err := fmt.Errorf("%w: multiple term keys found in term definition", ErrUnexpectedKey)
@@ -129,24 +139,6 @@ func (p *parserT) parseTermAsMap(state ruleState, node ast.Node, negateOffset in
 				leaf = &protoField{Count: 1}
 			}
 			if err := p.parseTermField(key, v.Value, leaf, negateOffset > 0); err != nil {
-				return nil, err
-			}
-
-		case kwSet:
-			if leaf != nil || child != nil {
-				err := fmt.Errorf("%w: multiple term keys found in term definition", ErrUnexpectedKey)
-				return nil, p.wrapError(v.Key, err)
-			}
-			if child, err = p.parseInnerNode(state, AstNodeTypeSet, v.Value); err != nil {
-				return nil, err
-			}
-
-		case kwSequence:
-			if leaf != nil || child != nil {
-				err := fmt.Errorf("%w: multiple term keys found in term definition", ErrUnexpectedKey)
-				return nil, p.wrapError(v.Key, err)
-			}
-			if child, err = p.parseInnerNode(state, AstNodeTypeSeq, v.Value); err != nil {
 				return nil, err
 			}
 
@@ -162,32 +154,6 @@ func (p *parserT) parseTermAsMap(state ruleState, node ast.Node, negateOffset in
 				return nil, err
 			}
 
-		case kwPromQL:
-			if leaf != nil || child != nil {
-				err := fmt.Errorf("%w: multiple term keys found in term definition", ErrUnexpectedKey)
-				return nil, p.wrapError(v.Key, err)
-			}
-			if nOpts != nil {
-				err := fmt.Errorf("%w: negate options cannot be used with %s terms", ErrUnexpectedKey, key.Value)
-				return nil, p.wrapError(key, err)
-			}
-			if child, err = p.parsePromQLNode(state, v.Value); err != nil {
-				return nil, err
-			}
-
-		case kwScript:
-			if leaf != nil || child != nil {
-				err := fmt.Errorf("%w: multiple term keys found in term definition", ErrUnexpectedKey)
-				return nil, p.wrapError(v.Key, err)
-			}
-			if nOpts != nil {
-				err := fmt.Errorf("%w: negate options cannot be used with %s terms", ErrUnexpectedKey, key.Value)
-				return nil, p.wrapError(key, err)
-			}
-			if child, err = p.parseScriptNode(state, v.Value); err != nil {
-				return nil, err
-			}
-
 		default:
 			err := fmt.Errorf("%w: unexpected key '%s' in term definition", ErrUnexpectedKey, key.Value)
 			return nil, p.wrapError(v.Key, err)
@@ -199,6 +165,36 @@ func (p *parserT) parseTermAsMap(state ruleState, node ast.Node, negateOffset in
 		child:      child,
 		leaf:       leaf,
 	}, nil
+}
+
+func (p *parserT) parseTermChild(state ruleState, key *ast.StringNode, val ast.Node, nOpts *AstNegateOptsT) (AstNode, error) {
+
+	switch key.Value {
+
+	case kwSet:
+		return p.parseInnerNode(state, AstNodeTypeSet, val)
+
+	case kwSequence:
+		return p.parseInnerNode(state, AstNodeTypeSeq, val)
+
+	case kwPromQL:
+		if nOpts != nil {
+			err := fmt.Errorf("%w: negate options cannot be used with %s terms", ErrUnexpectedKey, key.Value)
+			return nil, p.wrapError(key, err)
+		}
+		return p.parsePromQLNode(state, val)
+
+	case kwScript:
+		if nOpts != nil {
+			err := fmt.Errorf("%w: negate options cannot be used with %s terms", ErrUnexpectedKey, key.Value)
+			return nil, p.wrapError(key, err)
+		}
+		return p.parseScriptNode(state, val)
+
+	default:
+		err := fmt.Errorf("%w: unexpected key '%s' in term definition", ErrUnexpectedKey, key.Value)
+		return nil, p.wrapError(key, err)
+	}
 }
 
 func (p *parserT) parseTermField(key *ast.StringNode, v ast.Node, match *protoField, allowNegate bool) error {

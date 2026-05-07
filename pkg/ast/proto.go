@@ -22,6 +22,13 @@ type protoTerm struct {
 	negateOpts *AstNegateOptsT
 }
 
+func (t protoTerm) count() uint64 {
+	if t.leaf != nil {
+		return t.leaf.Count
+	}
+	return 1
+}
+
 type protoField struct {
 	Field      string
 	StrValue   string

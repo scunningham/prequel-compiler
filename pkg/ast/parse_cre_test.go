@@ -30,6 +30,7 @@ func TestParseCreNode_TableDriven(t *testing.T) {
 		yaml    string
 		strict  bool
 		wantErr error
+		wantPos int
 		wants   AstCreT
 	}{
 		{
@@ -93,12 +94,11 @@ applications:
 			},
 		},
 		{
-			name: "cre id is wrong type",
-			yaml: `
-id: 11
-`,
+			name:    "cre id is wrong type",
+			yaml:    `id: 112333`,
 			strict:  true,
 			wantErr: ErrUnexpectedType,
+			wantPos: 5, // Seems to be one based.
 		},
 		{
 			name: "invalid id (too short)",
@@ -108,6 +108,7 @@ title: Bad CRE
 `,
 			strict:  true,
 			wantErr: ErrBadIdentifier,
+			wantPos: 6, // Pos of 'ab', one based.
 		},
 		{
 			name: "unexpected key in strict mode",
@@ -118,6 +119,7 @@ unexpected: value
 `,
 			strict:  true,
 			wantErr: ErrUnexpectedKey,
+			wantPos: 43, // Pos of ':' in 'unexpected:'
 		},
 		{
 			name: "unexpected key in non-strict mode",
@@ -126,8 +128,7 @@ id: CRE-9999
 title: NonStrict CRE
 unexpected: value
 `,
-			strict:  false,
-			wantErr: nil,
+			strict: false,
 			wants: AstCreT{
 				Id:    "CRE-9999",
 				Title: "NonStrict CRE",
@@ -176,16 +177,19 @@ applications:
 `,
 			strict:  true,
 			wantErr: ErrUnexpectedKey,
+			wantPos: 45, // Pos of ':' in 'unexpected:'
 		},
 		{
 			name: "strict app with extra key non-strict",
 			yaml: `
+id: CRE-7777
 applications:
   - name: app1
     unexpected: value
 `,
 			strict: false,
 			wants: AstCreT{
+				Id: "CRE-7777",
 				Applications: []AstAppT{
 					{Name: "app1"},
 				},
@@ -197,6 +201,7 @@ applications:
 applications: badtype
 `,
 			wantErr: ErrUnexpectedType,
+			wantPos: 16, // Pos of 'b' in 'badtype'
 		},
 		{
 			name: "bad app value type",
@@ -205,6 +210,7 @@ applications:
   - notamapping
 `,
 			wantErr: ErrUnexpectedType,
+			wantPos: 20, // Pos of 'n' in 'notamapping'
 		},
 		{
 			name: "bad app key",
@@ -214,12 +220,17 @@ applications:
 `,
 			strict:  true,
 			wantErr: ErrUnexpectedType,
+			wantPos: 20, // Pos of '11' in '11: badkey'
 		},
 		{
-			name:   "valid severity value",
-			yaml:   `severity: 3`,
+			name: "valid severity value",
+			yaml: `
+id: CRE-5555
+severity: 3
+`,
 			strict: true,
 			wants: AstCreT{
+				Id:       "CRE-5555",
 				Severity: SeverityLow,
 			},
 		},
@@ -228,6 +239,7 @@ applications:
 			yaml:    `severity: -1`,
 			strict:  true,
 			wantErr: ErrUnexpectedType,
+			wantPos: 11, // Pos of '-' in '-1'
 		},
 		{
 			name:    "invalid severity value",
@@ -239,11 +251,13 @@ applications:
 			name:    "invalid node type",
 			yaml:    `shrubbery`,
 			wantErr: ErrUnexpectedType,
+			wantPos: 1, // Pos of 's' in 'shrubbery'
 		},
 		{
 			name:    "invalid mapping key type",
 			yaml:    `11: invalid key type`,
 			wantErr: ErrUnexpectedType,
+			wantPos: 1, // Pos of '11' in '11: invalid key type'
 		},
 	}
 
@@ -257,6 +271,19 @@ applications:
 				if !errors.Is(err, tt.wantErr) {
 					t.Fatalf("expected error %v, got %v", tt.wantErr, err)
 				}
+
+				if tt.wantPos > 0 {
+
+					var perr ParseError
+					if !errors.As(err, &perr) {
+						t.Fatalf("expected a parser error, got %v", err)
+					}
+					if perr.Offset() != tt.wantPos {
+						t.Fatalf("expected error at position %d, got %d", tt.wantPos, perr.Offset())
+					}
+
+				}
+
 				return
 			}
 			if err != nil {

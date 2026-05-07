@@ -11,6 +11,7 @@ import (
 
 type parserT struct {
 	strict         bool
+	root           ast.Node
 	validateLua    ValidatorFunc
 	validatePromQL ValidatorFunc
 }
@@ -61,6 +62,12 @@ func (p *parserT) parse(yamlInput []byte) ([]AstRuleT, error) {
 
 func (p *parserT) parseDocument(doc *ast.DocumentNode) ([]AstRuleT, error) {
 
+	// Set the root of the document for error reporting purposes.
+	p.root = doc.Body
+	defer func() {
+		p.root = nil
+	}()
+
 	mapping, err := p.nodeToMapping(doc.Body)
 	if err != nil {
 		return nil, err
@@ -103,20 +110,18 @@ func (p *parserT) parseDocument(doc *ast.DocumentNode) ([]AstRuleT, error) {
 func (p *parserT) rewriteError(err error) error {
 
 	if yErr, ok := err.(yaml.Error); ok {
-		var (
-			token = yErr.GetToken()
-			pos   = token.Position
-		)
-
 		return ParseError{
-			Line:   pos.Line,
-			Column: pos.Column,
-			Offset: pos.Offset,
-			Msg:    yaml.FormatError(err, false, true),
+			token: yErr.GetToken(),
+			err:   err,
 		}
 	}
 
 	return err
+}
+
+func (p *parserT) wrapErrorParent(node ast.Node, err error) error {
+	parent := ast.Parent(p.root, node)
+	return p.wrapError(parent, err)
 }
 
 func (p *parserT) wrapError(node ast.Node, err error) error {
@@ -124,18 +129,8 @@ func (p *parserT) wrapError(node ast.Node, err error) error {
 		return p.rewriteError(err)
 	}
 
-	var (
-		token = node.GetToken()
-		pos   = token.Position
-		msg   = yaml.FormatErrorWithToken("", token, false, true)
-	)
-
-	parseError := ParseError{
-		Line:   pos.Line,
-		Column: pos.Column,
-		Offset: pos.Offset,
-		Msg:    msg,
+	return ParseError{
+		token: node.GetToken(),
+		err:   err,
 	}
-
-	return fmt.Errorf("%w: %w", parseError, err)
 }

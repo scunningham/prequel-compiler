@@ -23,6 +23,15 @@ func newRuleState(meta *AstMetadataT) ruleState {
 	}
 }
 
+func (s ruleState) incOrigin() int {
+	*s.origin++
+	return *s.origin
+}
+
+func (s ruleState) getOrigin() int {
+	return *s.origin
+}
+
 func (s ruleState) incRank() ruleState {
 	s.rank++
 	return s

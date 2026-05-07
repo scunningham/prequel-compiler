@@ -55,6 +55,16 @@ func (p *parserT) parseMetadataNode(node ast.Node) (*AstMetadataT, error) {
 		}
 	}
 
+	if meta.Id == "" {
+		err := fmt.Errorf("%w: %s", ErrMissingKey, kwId)
+		return nil, p.wrapErrorParent(mapping, err)
+	}
+
+	if meta.Hash == "" {
+		err := fmt.Errorf("%w: %s", ErrMissingKey, kwHash)
+		return nil, p.wrapErrorParent(mapping, err)
+	}
+
 	return &meta, nil
 }
 

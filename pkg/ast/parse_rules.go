@@ -109,6 +109,10 @@ func (p *parserT) parseRuleNode(node ast.Node) (*AstRuleT, error) {
 		return nil, maybeMeta(err)
 	}
 
+	if ruleState.getOrigin() < 1 {
+		return nil, maybeMeta(p.wrapErrorParent(ruleDom, ErrMissingOrigin))
+	}
+
 	rule := &AstRuleT{
 		Cre:      cre,
 		Metadata: *meta,
@@ -168,7 +172,7 @@ func (p *parserT) parseRootNode(state ruleState, node ast.Node) (AstNode, error)
 			}
 
 		default:
-			err := fmt.Errorf("%w: only '%s' or '%s' expected in rule root, not %s", ErrUnexpectedKey, kwSequence, kwSet, key)
+			err := fmt.Errorf("%w: only '%s' or '%s' expected in rule root, not '%s'", ErrUnexpectedKey, kwSequence, kwSet, key)
 			return nil, p.wrapError(v.Key, err)
 
 		}

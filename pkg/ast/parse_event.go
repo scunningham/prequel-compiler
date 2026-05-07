@@ -30,7 +30,7 @@ func (p *parserT) parseEventNode(state ruleState, node ast.Node) (*AstEventT, er
 			event.Source, err = p.nodeToString(v.Value)
 		default:
 			if p.strict {
-				err = p.wrapError(v, fmt.Errorf("%w: unexpected key in event: %s", ErrUnexpectedKey, key))
+				err = p.wrapError(v.Key, fmt.Errorf("%w: unexpected key in event: %s", ErrUnexpectedKey, key))
 			}
 		}
 
@@ -48,11 +48,8 @@ func (p *parserT) parseOrigin(state ruleState, node ast.Node) (bool, error) {
 		return false, err
 	}
 
-	if b {
-		*state.origin++
-		if *state.origin > 1 {
-			return false, p.wrapError(node, ErrMultipleOrigin)
-		}
+	if b && (state.incOrigin() > 1) {
+		return false, p.wrapError(node, ErrMultipleOrigin)
 	}
 
 	return b, nil

@@ -1,5 +1,429 @@
 package ast
 
+import (
+	"errors"
+	"fmt"
+	"testing"
+
+	"github.com/prequel-dev/prequel-compiler/pkg/testdata"
+)
+
+func TestAstSuccess(t *testing.T) {
+
+	tests := []struct {
+		name      string
+		yaml      string
+		wantOrder []string
+	}{
+		{
+			name: "Success_Simple1",
+			yaml: testdata.TestSuccessSimpleRule1,
+			wantOrder: []string{
+				"v1.machine_seq.rdJLgqYgkEp8jg8Qks1qiq.d0.n0.t0",
+				"v1.log_seq.rdJLgqYgkEp8jg8Qks1qiq.d1.n1.t0",
+			},
+		},
+		{
+			name: "Success_Complex2",
+			yaml: testdata.TestSuccessComplexRule2,
+			wantOrder: []string{
+				"v1.machine_seq.rdJLgqYgkEp8jg8Qks1qiq.d0.n0.t0",
+				"v1.log_seq.rdJLgqYgkEp8jg8Qks1qiq.d1.n1.t0",
+				"v1.log_set.rdJLgqYgkEp8jg8Qks1qiq.d1.n2.t1",
+				"v1.machine_seq.rdJLgqYgkEp8jg8Qks1qiq.d1.n3.t2",
+				"v1.log_seq.rdJLgqYgkEp8jg8Qks1qiq.d2.n4.t0",
+				"v1.log_set.rdJLgqYgkEp8jg8Qks1qiq.d2.n5.t1",
+				"v1.log_set.rdJLgqYgkEp8jg8Qks1qiq.d2.n6.t2",
+			},
+		},
+		{
+			name: "Success_Complex3",
+			yaml: testdata.TestSuccessComplexRule3,
+			wantOrder: []string{
+				"v1.machine_seq.rdJLgqYgkEp8jg8Qks1qiq.d0.n0.t0",
+				"v1.log_seq.rdJLgqYgkEp8jg8Qks1qiq.d1.n1.t0",
+				"v1.log_set.rdJLgqYgkEp8jg8Qks1qiq.d1.n2.t1",
+			},
+		},
+		{
+			name: "Success_Complex4",
+			yaml: testdata.TestSuccessComplexRule4,
+			wantOrder: []string{
+				"v1.machine_seq.2KdXQZDAfRbYcH9FBDteBS.d0.n0.t0",
+				"v1.log_seq.2KdXQZDAfRbYcH9FBDteBS.d1.n1.t0",
+				"v1.machine_seq.2KdXQZDAfRbYcH9FBDteBS.d1.n2.t1",
+				"v1.log_seq.2KdXQZDAfRbYcH9FBDteBS.d2.n3.t0",
+				"v1.log_set.2KdXQZDAfRbYcH9FBDteBS.d2.n4.t1",
+				"v1.log_set.2KdXQZDAfRbYcH9FBDteBS.d2.n5.t2",
+				"v1.machine_seq.2KdXQZDAfRbYcH9FBDteBS.d1.n6.t2",
+				"v1.log_seq.2KdXQZDAfRbYcH9FBDteBS.d2.n7.t0",
+				"v1.log_set.2KdXQZDAfRbYcH9FBDteBS.d2.n8.t1",
+				"v1.log_set.2KdXQZDAfRbYcH9FBDteBS.d2.n9.t2",
+				"v1.log_set.2KdXQZDAfRbYcH9FBDteBS.d1.n10.t3",
+			},
+		},
+		{
+			name: "Success_NegateOptions1",
+			yaml: testdata.TestSuccessNegateOptions1,
+			wantOrder: []string{
+				"v1.machine_seq.rdJLgqYgkEp8jg8Qks1qiq.d0.n0.t0",
+				"v1.log_seq.rdJLgqYgkEp8jg8Qks1qiq.d1.n1.t0",
+			},
+		},
+		{
+			name: "Success_NegateOptions2",
+			yaml: testdata.TestSuccessNegateOptions2,
+			wantOrder: []string{
+				"v1.machine_seq.rdJLgqYgkEp8jg8Qks1qiq.d0.n0.t0",
+				"v1.log_seq.rdJLgqYgkEp8jg8Qks1qiq.d1.n1.t0",
+				"v1.log_set.rdJLgqYgkEp8jg8Qks1qiq.d1.n2.t1",
+				"v1.log_set.rdJLgqYgkEp8jg8Qks1qiq.d1.n3.t2",
+			},
+		},
+		{
+			name: "Success_Extract1",
+			yaml: testdata.TestSuccessSimpleExtraction,
+			wantOrder: []string{
+				"v1.machine_seq.rdJLgqYgkEp8jg8Qks1qiq.d0.n0.t0",
+				"v1.log_seq.rdJLgqYgkEp8jg8Qks1qiq.d1.n1.t0",
+			},
+		},
+		{
+			name: "Success_PromQL",
+			yaml: testdata.TestSuccessSimplePromQL,
+			wantOrder: []string{
+				"v1.machine_set.rdJLgqYgkEp8jg8Qks1qiq.d0.n0.t0",
+				"v1.promql.rdJLgqYgkEp8jg8Qks1qiq.d1.n1.t0",
+				"v1.log_set.rdJLgqYgkEp8jg8Qks1qiq.d1.n2.t1",
+			},
+		},
+		{
+			name: "Success_ChildScript",
+			yaml: testdata.TestSuccessChildScript,
+			wantOrder: []string{
+				"v1.machine_seq.rdJLgqYgkEp8jg8Qks1qiq.d0.n0.t0",
+				"v1.script.rdJLgqYgkEp8jg8Qks1qiq.d1.n1.t0",
+				"v1.log_seq.rdJLgqYgkEp8jg8Qks1qiq.d2.n2.t0",
+				"v1.log_set.rdJLgqYgkEp8jg8Qks1qiq.d1.n3.t1",
+			},
+		},
+		{
+			name: "Success_ChildScriptMultipleInputs",
+			yaml: testdata.TestSuccessChildScriptMultipleInputs,
+			wantOrder: []string{
+				"v1.machine_set.rdJLgqYgkEp8jg8Qks1qiq.d0.n0.t0",
+				"v1.script.rdJLgqYgkEp8jg8Qks1qiq.d1.n1.t0",
+				"v1.machine_seq.rdJLgqYgkEp8jg8Qks1qiq.d2.n2.t0",
+				"v1.log_seq.rdJLgqYgkEp8jg8Qks1qiq.d3.n3.t0",
+				"v1.log_set.rdJLgqYgkEp8jg8Qks1qiq.d3.n4.t1",
+			},
+		},
+		{
+			name: "Success_ChildScriptPromQLInput",
+			yaml: testdata.TestSuccessChildScriptPromQLInput,
+			wantOrder: []string{
+				"v1.machine_set.rdJLgqYgkEp8jg8Qks1qiq.d0.n0.t0",
+				"v1.script.rdJLgqYgkEp8jg8Qks1qiq.d1.n1.t0",
+				"v1.promql.rdJLgqYgkEp8jg8Qks1qiq.d2.n2.t0",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+
+			rules, err := ParseRules([]byte(tt.yaml), WithStrict(true))
+
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+
+			if len(rules) != 1 {
+				t.Fatalf("expected 1 rule, got %d", len(rules))
+			}
+
+			order := extractOrder(t, rules[0])
+
+			minLen := min(len(order), len(tt.wantOrder))
+
+			// Compare shared range.
+			for i := range minLen {
+				if order[i] != tt.wantOrder[i] {
+					fmt.Println(Draw(rules[0], WithColor()))
+					t.Fatalf("first mismatch at position %d: expected '%s' != '%s'", i, tt.wantOrder[i], order[i])
+				}
+			}
+
+			// Handle length mismatch.
+			if len(order) != len(tt.wantOrder) {
+				t.Fatalf("expected order  sz %v, got %v", len(tt.wantOrder), len(order))
+			}
+		})
+	}
+}
+
+func TestAstFail(t *testing.T) {
+	tests := []struct {
+		name    string
+		yaml    string
+		strict  bool
+		wantErr error
+		wantPos int
+	}{
+		{
+			name:    "Fail_MissingPositiveCondition",
+			yaml:    testdata.TestFailMissingPositiveCondition,
+			wantErr: ErrMissingTerm,
+			wantPos: 607,
+		},
+		{
+			name:    "Fail_NegativeCondition1",
+			yaml:    testdata.TestFailNegativeCondition1,
+			wantErr: ErrMissingTerm,
+			wantPos: 632,
+		},
+		{
+			name:    "Fail_NegativeCondition2",
+			yaml:    testdata.TestFailNegativeCondition2,
+			wantErr: ErrMissingTerm,
+			wantPos: 632,
+		},
+		{
+			name:    "Fail_NegativeCondition2",
+			yaml:    testdata.TestFailNegativeCondition2,
+			wantErr: ErrUnexpectedKey, // 'src' is not valid
+			strict:  true,
+			wantPos: 363,
+		},
+		{
+			name:    "Fail_NegativeCondition3",
+			yaml:    testdata.TestFailNegateOptions3,
+			wantErr: ErrMissingTerm,
+			wantPos: 749,
+		},
+		{
+			name:    "Fail_NegativeCondition4",
+			yaml:    testdata.TestFailNegateOptions4,
+			wantErr: ErrMissingTerm,
+			wantPos: 765,
+		},
+		{
+			name:    "Fail_TermsSyntaxError1",
+			yaml:    testdata.TestFailTermsSyntaxError1,
+			wantErr: ErrUnexpectedKey,
+			wantPos: 670,
+		},
+		{
+			name:    "Fail_TermsSyntaxError2",
+			yaml:    testdata.TestFailTermsSyntaxError2,
+			wantErr: ErrUnexpectedType,
+			wantPos: 672,
+		},
+		{
+			name:    "Fail_TermsSemanticError1",
+			yaml:    testdata.TestFailTermsSemanticError1,
+			wantErr: ErrShortSequence,
+			wantPos: 697,
+		},
+		{
+			name:    "Fail_TermsSemanticError2",
+			yaml:    testdata.TestFailTermsSemanticError2,
+			wantErr: ErrMissingEvent,
+			wantPos: 199,
+		},
+		{
+			name:    "Fail_TermsSemanticError3",
+			yaml:    testdata.TestFailTermsSemanticError3,
+			wantErr: ErrMissingOrigin,
+			wantPos: 183,
+		},
+		{
+			name:    "Fail_TermsSemanticError4",
+			yaml:    testdata.TestFailTermsSemanticError4,
+			wantErr: ErrUnexpectedType,
+			wantPos: 314,
+		},
+		{
+			name:    "Fail_TermsSemanticError5",
+			yaml:    testdata.TestFailTermsSemanticError5,
+			wantErr: ErrBadAnchor,
+			wantPos: 411,
+		},
+		{
+			name:    "Fail_TermsSemanticError6",
+			yaml:    testdata.TestFailTermsSemanticError6,
+			wantErr: ErrMissingOrigin,
+			wantPos: 183,
+		},
+		{
+			name:    "Fail_MultipleOrigin",
+			yaml:    testdata.TestFailMultipleOrigin,
+			wantErr: ErrMultipleOrigin,
+			wantPos: 502,
+		},
+		{
+			name:    "Fail_Typo",
+			yaml:    testdata.TestFailTypo,
+			wantErr: ErrUnexpectedKey,
+			wantPos: 290,
+		},
+		{
+			name:    "Fail_MissingOrder",
+			yaml:    testdata.TestFailMissingOrder,
+			wantErr: ErrUnexpectedKey,
+			wantPos: 279,
+		},
+		{
+			name:    "Fail_MissingMatch",
+			yaml:    testdata.TestFailMissingMatch,
+			wantErr: ErrUnexpectedKey,
+			wantPos: 274,
+		},
+		{
+			name:    "Fail_InvalidWindow",
+			yaml:    testdata.TestFailInvalidWindow,
+			wantErr: ErrUnexpectedType,
+			wantPos: 224,
+		},
+		{
+			name:    "Fail_UnsupportedRule",
+			yaml:    testdata.TestFailUnsupportedRule,
+			wantErr: ErrUnexpectedKey,
+			wantPos: 203,
+		},
+		{
+			name:    "Fail_MissingCreId",
+			yaml:    testdata.TestFailMissingCreRule,
+			wantErr: ErrMissingKey,
+			wantPos: 36,
+		},
+		{
+			name:    "Fail_MissingRuleId",
+			yaml:    testdata.TestFailMissingRuleIdRule,
+			wantErr: ErrMissingKey,
+			wantPos: 100,
+		},
+		{
+			name:    "Fail_MissingRuleHash",
+			yaml:    testdata.TestFailMissingRuleHashRule,
+			wantErr: ErrMissingKey,
+			wantPos: 102,
+		},
+		{
+			name:    "Fail_BadRuleId",
+			yaml:    testdata.TestFailBadRuleIdRule,
+			wantErr: ErrBadIdentifier,
+			wantPos: 108,
+		},
+		{
+			name:    "Fail_BadCreId",
+			yaml:    testdata.TestFailBadCreIdRule,
+			wantErr: ErrBadIdentifier,
+			wantPos: 48,
+		},
+		{
+			name:    "Fail_BadRuleHash",
+			yaml:    testdata.TestFailBadRuleHashRule,
+			wantErr: ErrBadHash,
+			wantPos: 147,
+		},
+		{
+			name:    "Fail_ScriptRoot",
+			yaml:    testdata.TestFailScriptRoot,
+			wantErr: ErrUnexpectedKey,
+			wantPos: 162,
+		},
+		{
+			name:    "Fail_ScriptNoInput",
+			yaml:    testdata.TestFailScriptNoInput,
+			wantErr: ErrMissingKey,
+			wantPos: 203,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+
+			rules, err := ParseRules([]byte(tt.yaml), WithStrict(tt.strict))
+
+			if !errors.Is(err, tt.wantErr) {
+				t.Errorf("expected error %v, got %v", tt.wantErr, err)
+			}
+
+			if rules != nil {
+				t.Errorf("expected no rules to be returned, got %v", rules)
+			}
+
+			if tt.wantPos > 0 {
+
+				var perr ParseError
+				if !errors.As(err, &perr) {
+					t.Fatalf("expected a parser error, got %v", err)
+				}
+				if perr.Offset() != tt.wantPos {
+					t.Errorf("expected error at position %d, got %d", tt.wantPos, perr.Offset())
+					t.Logf("%v", perr.FormatError(false, true))
+				}
+
+			}
+
+		})
+	}
+}
+
+// Validate the following invariants on the tree:
+// 1. No duplicate addresses
+// 2. Root node has no parent address
+// 3. Node ids are unique
+// 4. Depth is consistent with distance from root
+
+func extractOrder(t *testing.T, rule AstRuleT) []string {
+	t.Helper()
+
+	var (
+		order    []string
+		dupeIds  = make(map[uint32]struct{})
+		dupeAddr = make(map[string]struct{})
+	)
+
+	err := rule.Walk(func(node AstNode, _ *AstNegateOptsT) error {
+		var (
+			addr    = node.Address()
+			addrStr = addr.String()
+		)
+
+		order = append(order, addrStr)
+
+		if _, exists := dupeIds[addr.NodeId]; exists {
+			t.Fatalf("Duplicate node ID found: %d", addr.NodeId)
+		}
+		dupeIds[addr.NodeId] = struct{}{}
+
+		if _, exists := dupeAddr[addrStr]; exists {
+			t.Fatalf("Duplicate address found: %s", addrStr)
+		}
+		dupeAddr[addrStr] = struct{}{}
+
+		// Depth should be one larger than parent's depth;
+		// or can rewinde if going back up the tree
+		if parentAddr := node.Parent(); parentAddr == nil {
+			if addr.Depth != 0 {
+				t.Fatalf("Root node has non-zero depth: %d", addr.Depth)
+			}
+		} else if addr.Depth != parentAddr.Depth+1 {
+			t.Fatalf("Node depth inconsistent with parent's depth: %d (parent: %d)", addr.Depth, parentAddr.Depth)
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		t.Fatalf("Walk failed: %v", err)
+	}
+
+	return order
+}
+
 // import (
 // 	"fmt"
 // 	"testing"

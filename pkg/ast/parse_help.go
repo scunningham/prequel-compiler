@@ -156,3 +156,16 @@ func (p *parserT) nodeToDurationPositive(node ast.Node) (time.Duration, error) {
 	}
 	return dur, nil
 }
+
+func findKey(node ast.Node, key string) ast.Node {
+	mapping, ok := node.(*ast.MappingNode)
+	if !ok {
+		return nil
+	}
+	for _, v := range mapping.Values {
+		if k, ok := v.Key.(*ast.StringNode); ok && k.Value == key {
+			return v.Key
+		}
+	}
+	return nil
+}

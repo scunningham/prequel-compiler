@@ -84,6 +84,11 @@ func (p *parserT) parseCreNode(node ast.Node) (*AstCreT, error) {
 		}
 	}
 
+	if cre.Id == "" {
+		err := fmt.Errorf("%w: %s", ErrMissingKey, kwCreId)
+		return nil, p.wrapErrorParent(mapping, err)
+	}
+
 	return &cre, nil
 }
 
@@ -93,7 +98,7 @@ func (p *parserT) parseCreId(v ast.Node) (string, error) {
 		return "", err
 	}
 
-	if p.strict && !validCreIdRegex.MatchString(s) {
+	if !validCreIdRegex.MatchString(s) {
 		err := fmt.Errorf("%w: id value must be at least 4 characters and contain only letters, numbers, or hyphens", ErrBadIdentifier)
 		return "", p.wrapError(v, err)
 	}
