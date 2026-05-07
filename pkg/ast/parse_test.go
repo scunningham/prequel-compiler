@@ -182,20 +182,20 @@ func TestAstFail(t *testing.T) {
 			name:    "Fail_NegativeCondition1",
 			yaml:    testdata.TestFailNegativeCondition1,
 			wantErr: ErrMissingTerm,
-			wantPos: 632,
+			wantPos: 635,
 		},
 		{
 			name:    "Fail_NegativeCondition2",
 			yaml:    testdata.TestFailNegativeCondition2,
 			wantErr: ErrMissingTerm,
-			wantPos: 632,
+			wantPos: 635,
 		},
 		{
-			name:    "Fail_NegativeCondition2",
+			name:    "Fail_NegativeCondition2_Strict",
 			yaml:    testdata.TestFailNegativeCondition2,
-			wantErr: ErrUnexpectedKey, // 'src' is not valid
+			wantErr: ErrUnexpectedKey, // 'imageUrl'
 			strict:  true,
-			wantPos: 363,
+			wantPos: 420,
 		},
 		{
 			name:    "Fail_NegativeCondition3",
@@ -360,31 +360,14 @@ func TestAstFail(t *testing.T) {
 
 			rules, err := ParseRules([]byte(tt.yaml), WithStrict(tt.strict))
 
-			if !errors.Is(err, tt.wantErr) {
-				t.Errorf("expected error %v, got %v", tt.wantErr, err)
-			}
+			ok := checkParserError(t, err, tt.wantErr, tt.wantPos)
 
-			if tt.wantErr == nil {
-				return
-			}
-
-			if rules != nil {
+			switch {
+			case ok && rules == nil:
+				t.Errorf("expected rules to be returned, got nil")
+			case !ok && rules != nil:
 				t.Errorf("expected no rules to be returned, got %v", rules)
 			}
-
-			if tt.wantPos > 0 {
-
-				var perr ParseError
-				if !errors.As(err, &perr) {
-					t.Fatalf("expected a parser error, got %v", err)
-				}
-				if perr.Offset() != tt.wantPos {
-					t.Errorf("expected error at position %d, got %d", tt.wantPos, perr.Offset())
-					t.Logf("%v", perr.Format(false, true))
-				}
-
-			}
-
 		})
 	}
 }
@@ -489,6 +472,38 @@ func TestFailureExamples(t *testing.T) {
 
 		})
 	}
+}
+
+// Return true if in a non error state
+func checkParserError(t *testing.T, err error, wantErr error, wantPos int) bool {
+	t.Helper()
+
+	var (
+		perr    ParseError
+		hasPerr = errors.As(err, &perr)
+	)
+
+	if !errors.Is(err, wantErr) {
+		t.Errorf("expected error '%v', got '%v'", wantErr, err)
+		if hasPerr {
+			t.Log(perr.Format(false, true))
+		}
+	}
+
+	if wantErr == nil {
+		return true
+	}
+
+	switch {
+	case wantPos <= 0:
+	case !hasPerr:
+		t.Errorf("expected a parser error, got '%v'", err)
+	case perr.Offset() != wantPos:
+		t.Errorf("expected error at position %d, got %d", wantPos, perr.Offset())
+		t.Log(perr.Format(false, true))
+	}
+
+	return false
 }
 
 // import (

@@ -151,7 +151,7 @@ func (p *parserT) parseWindow(node ast.Node) (time.Duration, error) {
 		return 0, err
 	}
 	if window < 0 {
-		return 0, p.wrapError(node, ErrorWindowNegative)
+		return 0, p.wrapError(node, ErrWindowNegative)
 	}
 	return window, nil
 }

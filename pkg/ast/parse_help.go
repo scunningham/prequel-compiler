@@ -10,6 +10,9 @@ import (
 )
 
 func (p *parserT) nodeToMapping(node ast.Node) (*ast.MappingNode, error) {
+	if node == nil {
+		return nil, fmt.Errorf("%w: expected yaml mapping, got null", ErrUnexpectedType)
+	}
 	mapping, ok := node.(*ast.MappingNode)
 	if !ok {
 		err := fmt.Errorf("%w: expected yaml mapping, got %s", ErrUnexpectedType, node.Type())
@@ -19,6 +22,9 @@ func (p *parserT) nodeToMapping(node ast.Node) (*ast.MappingNode, error) {
 }
 
 func (p *parserT) nodeToSequence(node ast.Node) (*ast.SequenceNode, error) {
+	if node == nil {
+		return nil, fmt.Errorf("%w: expected yaml sequence, got null", ErrUnexpectedType)
+	}
 	seq, ok := node.(*ast.SequenceNode)
 	if !ok {
 		err := fmt.Errorf("%w: expected yaml sequence, got %s", ErrUnexpectedType, node.Type())
@@ -28,6 +34,10 @@ func (p *parserT) nodeToSequence(node ast.Node) (*ast.SequenceNode, error) {
 }
 
 func (p *parserT) nodeToString(node ast.Node) (string, error) {
+	if node == nil {
+		return "", fmt.Errorf("%w: expected yaml string, got null", ErrUnexpectedType)
+	}
+
 	var s string
 
 	switch v := node.(type) {
@@ -47,6 +57,9 @@ func (p *parserT) nodeToString(node ast.Node) (string, error) {
 }
 
 func (p *parserT) nodeToInt64(node ast.Node) (int64, error) {
+	if node == nil {
+		return 0, fmt.Errorf("%w: expected yaml integer, got null", ErrUnexpectedType)
+	}
 	v, ok := node.(*ast.IntegerNode)
 	if !ok {
 		err := fmt.Errorf("%w: %s", ErrUnexpectedType, node.Type())
@@ -63,6 +76,9 @@ func (p *parserT) nodeToInt64(node ast.Node) (int64, error) {
 }
 
 func (p *parserT) nodeToUint64(node ast.Node) (uint64, error) {
+	if node == nil {
+		return 0, fmt.Errorf("%w: expected yaml integer, got null", ErrUnexpectedType)
+	}
 	v, ok := node.(*ast.IntegerNode)
 	if !ok {
 		err := fmt.Errorf("%w: %s", ErrUnexpectedType, node.Type())
@@ -91,6 +107,9 @@ func (p *parserT) nodeToUint(v ast.Node) (uint, error) {
 }
 
 func (p *parserT) nodeToBool(node ast.Node) (bool, error) {
+	if node == nil {
+		return false, fmt.Errorf("%w: expected yaml boolean, got null", ErrUnexpectedType)
+	}
 	v, ok := node.(*ast.BoolNode)
 	if !ok {
 		err := fmt.Errorf("%w: %s", ErrUnexpectedType, node.Type())

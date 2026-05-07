@@ -1,7 +1,6 @@
 package ast
 
 import (
-	"errors"
 	"reflect"
 	"testing"
 
@@ -267,27 +266,8 @@ severity: 3
 			p := &parserT{strict: tt.strict}
 			cre, err := p.parseCreNode(node)
 
-			if tt.wantErr != nil {
-				if !errors.Is(err, tt.wantErr) {
-					t.Fatalf("expected error %v, got %v", tt.wantErr, err)
-				}
-
-				if tt.wantPos > 0 {
-
-					var perr ParseError
-					if !errors.As(err, &perr) {
-						t.Fatalf("expected a parser error, got %v", err)
-					}
-					if perr.Offset() != tt.wantPos {
-						t.Fatalf("expected error at position %d, got %d", tt.wantPos, perr.Offset())
-					}
-
-				}
-
+			if !checkParserError(t, err, tt.wantErr, tt.wantPos) {
 				return
-			}
-			if err != nil {
-				t.Fatalf("unexpected error: %v", err)
 			}
 
 			if !reflect.DeepEqual(*cre, tt.wants) {

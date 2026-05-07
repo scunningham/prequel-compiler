@@ -578,7 +578,7 @@ rules:
           - sequence:
               window: 10s
               event:
-                src: log
+                source: log
                 origin: true
                 imageUrl: "*rabbitmq*"
               order:
@@ -589,7 +589,7 @@ rules:
                 - SIGTERM
           - set:
               event:
-                src: k8s
+                source: k8s
               negate:
                 - field: "reason"
                   value: "NodeShutdown"
@@ -601,20 +601,20 @@ rules:
                 - sequence:
                     window: 1s
                     event:
-                      src: log
+                      source: log
                       containerName: nginx
                     order:
                       - error message
                       - shutdown
                 - set:
                     event:
-                      src: log
+                      source: log
                       containerName: nginx
                     match:
                       - 90%
                 - set:
                     event:
-                      src: k8s
+                      source: k8s
                     match:
                       - field: "reason"
                         value: "Killing"
@@ -638,7 +638,7 @@ rules:
           - sequence:
               window: 10s
               event:
-                src: log
+                source: log
                 origin: true
                 imageUrl: "*rabbitmq*"
               order:
@@ -649,7 +649,7 @@ rules:
                 - SIGTERM
           - set:
               event:
-                src: k8s
+                source: k8s
               negate:
               - field: "reason"
                 value: "Killing"

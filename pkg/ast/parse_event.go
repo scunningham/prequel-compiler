@@ -39,6 +39,10 @@ func (p *parserT) parseEventNode(state ruleState, node ast.Node) (*AstEventT, er
 		}
 	}
 
+	if event.Source == "" {
+		return nil, p.wrapErrorParent(node, ErrMissingSource)
+	}
+
 	return &event, nil
 }
 
