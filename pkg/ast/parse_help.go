@@ -1,6 +1,7 @@
 package ast
 
 import (
+	"errors"
 	"fmt"
 	"math"
 	"regexp"
@@ -143,10 +144,24 @@ func (p *parserT) nodeToRegex(node ast.Node) (*regexp.Regexp, error) {
 	}
 	exp, err := regexp.Compile(v)
 	if err != nil {
-		err = fmt.Errorf("%w: invalid regex pattern: %v", ErrUnexpectedType, err)
+		err = errors.Join(ErrBadRegex, err)
 		return nil, p.wrapError(node, err)
 	}
 	return exp, nil
+}
+
+func (p *parserT) nodeToJq(node ast.Node) (string, error) {
+	v, err := p.nodeToString(node)
+	if err != nil {
+		return "", p.wrapError(node, err)
+	}
+
+	if err := p.validateJQ(v); err != nil {
+		err := errors.Join(ErrBadJq, err)
+		return "", p.wrapError(node, err)
+	}
+
+	return v, nil
 }
 
 func (p *parserT) nodeToDuration(node ast.Node) (time.Duration, error) {

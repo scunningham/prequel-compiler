@@ -18,11 +18,12 @@ func (p *parserT) parseExtracts(node ast.Node) ([]AstExtractT, error) {
 
 	var (
 		extracts []AstExtractT
+		dupes    = make(map[string]struct{}, len(seq.Values)) // Track extract names to detect duplicates.
 	)
 
 	for _, v := range seq.Values {
 
-		extract, err := p.parseExtractNode(v)
+		extract, err := p.parseExtractNode(v, dupes)
 		if err != nil {
 			return nil, err
 		}
@@ -30,10 +31,15 @@ func (p *parserT) parseExtracts(node ast.Node) ([]AstExtractT, error) {
 		extracts = append(extracts, *extract)
 	}
 
+	if len(extracts) == 0 && p.strict {
+		err := fmt.Errorf("%w: 'extract' must contain at least one extract definition", ErrMissingKey)
+		return nil, p.wrapError(node, err)
+	}
+
 	return extracts, nil
 }
 
-func (p *parserT) parseExtractNode(node ast.Node) (*AstExtractT, error) {
+func (p *parserT) parseExtractNode(node ast.Node, dupeMap map[string]struct{}) (*AstExtractT, error) {
 
 	mapping, err := p.nodeToMapping(node)
 	if err != nil {
@@ -44,6 +50,15 @@ func (p *parserT) parseExtractNode(node ast.Node) (*AstExtractT, error) {
 		hasValue bool
 		extract  AstExtractT
 	)
+
+	checkConflict := func(v ast.Node, key string) error {
+		if hasValue {
+			err := fmt.Errorf("%w: multiple value keys in extract: %s", ErrUnexpectedKey, key)
+			return p.wrapError(v, err)
+		}
+		hasValue = true
+		return nil
+	}
 
 	for _, v := range mapping.Values {
 
@@ -56,33 +71,40 @@ func (p *parserT) parseExtractNode(node ast.Node) (*AstExtractT, error) {
 		case kwExtractName:
 			extract.Name, err = p.parseExtractName(v.Value)
 
-		case kwExtractJq:
-			if hasValue {
-				err = fmt.Errorf("%w: multiple value keys in extract: %s", ErrUnexpectedKey, key)
-				return nil, p.wrapError(v, err)
+			if err == nil {
+				if _, exists := dupeMap[extract.Name]; exists {
+					err = fmt.Errorf("%w: '%s' is duplicated", ErrDupeExtractName, extract.Name)
+					return nil, p.wrapError(v.Value, err)
+				}
+				dupeMap[extract.Name] = struct{}{}
 			}
-			hasValue = true
-			extract.JqValue, err = p.nodeToString(v.Value)
+
+		case kwExtractJq:
+			if err := checkConflict(v, key); err != nil {
+				return nil, err
+			}
+			extract.JqValue, err = p.nodeToJq(v.Value)
 
 		case kwExtractRegex:
-			if hasValue {
-				err = fmt.Errorf("%w: multiple value keys in extract: %s", ErrUnexpectedKey, key)
-				return nil, p.wrapError(v, err)
+			if err := checkConflict(v, key); err != nil {
+				return nil, err
 			}
-			hasValue = true
 			var exp *regexp.Regexp
 			if exp, err = p.nodeToRegex(v.Value); err == nil {
 				extract.RegexValue = exp.String()
 			}
 
 		default:
-			if p.strict {
-				err = p.wrapError(v, fmt.Errorf("%w: unexpected key in extract: %s", ErrUnexpectedKey, key))
-			}
+			err = p.wrapError(v, fmt.Errorf("%w: unexpected key in extract: %s", ErrUnexpectedKey, key))
 		}
 
 		if err != nil {
 			return nil, err
+		}
+
+		if extract.Name == "" {
+			err := fmt.Errorf("%w: missing required '%s' key in extract definition", ErrMissingKey, kwExtractName)
+			return nil, p.wrapErrorParent(node, err)
 		}
 	}
 

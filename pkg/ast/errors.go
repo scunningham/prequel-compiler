@@ -34,6 +34,9 @@ var (
 	ErrMissingWindow   = errors.New("window is required when using multiple terms")
 	ErrWindowNegative  = errors.New("window duration cannot be negative")
 	ErrMissingSource   = errors.New("source is required in event")
+	ErrDupeExtractName = errors.New("duplicate extract name")
+	ErrBadRegex        = errors.New("invalid regex pattern")
+	ErrBadJq           = errors.New("invalid jq expression")
 )
 
 type ErrRule struct {

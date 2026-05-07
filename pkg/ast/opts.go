@@ -7,9 +7,16 @@ type (
 
 type optT struct {
 	strict          bool
+	jqValidator     ValidatorFunc
 	luaValidator    ValidatorFunc
 	promQLValidator ValidatorFunc
 }
+
+// WithStrict sets the strict mode for parsing.
+//   In strict mode, the parser will return an error if it encounters any unexpected keys in the YAML input. In non-strict mode, the parser will ignore unexpected keys and continue parsing.
+//   When disabled, the parser will ignore any non operational keys in the YAML input
+//   This is particularly true in the metadata sections where additional keys do
+//   not have operational impact on the rules engine.
 
 func WithStrict(strict bool) ParseOpt {
 	return func(opts *optT) {
@@ -17,16 +24,29 @@ func WithStrict(strict bool) ParseOpt {
 	}
 }
 
+func WithJQValidator(validator ValidatorFunc) ParseOpt {
+	return func(opts *optT) {
+		opts.jqValidator = selectValidator(validator)
+	}
+}
+
 func WithLuaValidator(validator ValidatorFunc) ParseOpt {
 	return func(opts *optT) {
-		opts.luaValidator = validator
+		opts.luaValidator = selectValidator(validator)
 	}
 }
 
 func WithPromQLValidator(validator ValidatorFunc) ParseOpt {
 	return func(opts *optT) {
-		opts.promQLValidator = validator
+		opts.promQLValidator = selectValidator(validator)
 	}
+}
+
+func selectValidator(validator ValidatorFunc) ValidatorFunc {
+	if validator == nil {
+		return stubValidator
+	}
+	return validator
 }
 
 var stubValidator = func(string) error { return nil }
@@ -36,6 +56,7 @@ func parseOpts(opts ...ParseOpt) optT {
 		strict:          false,
 		luaValidator:    stubValidator,
 		promQLValidator: stubValidator,
+		jqValidator:     stubValidator,
 	}
 	for _, f := range opts {
 		f(&opt)

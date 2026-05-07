@@ -12,6 +12,7 @@ import (
 type parserT struct {
 	strict         bool
 	root           ast.Node
+	validateJQ     ValidatorFunc
 	validateLua    ValidatorFunc
 	validatePromQL ValidatorFunc
 }
@@ -21,6 +22,7 @@ func ParseRules(yamlInput []byte, opts ...ParseOpt) ([]AstRuleT, error) {
 
 	p := parserT{
 		strict:         o.strict,
+		validateJQ:     o.jqValidator,
 		validateLua:    o.luaValidator,
 		validatePromQL: o.promQLValidator,
 	}
