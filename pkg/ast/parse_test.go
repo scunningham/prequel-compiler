@@ -3,6 +3,8 @@ package ast
 import (
 	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/prequel-dev/prequel-compiler/pkg/testdata"
@@ -252,8 +254,14 @@ func TestAstFail(t *testing.T) {
 		{
 			name:    "Fail_TermsSemanticError6",
 			yaml:    testdata.TestFailTermsSemanticError6,
+			strict:  true,
 			wantErr: ErrMissingOrigin,
 			wantPos: 183,
+		},
+		{
+			name:   "Fail_TermsSemanticError6_NonStrict",
+			yaml:   testdata.TestFailTermsSemanticError6,
+			strict: false, // Normally fails in strict mode
 		},
 		{
 			name:    "Fail_MultipleOrigin",
@@ -350,6 +358,10 @@ func TestAstFail(t *testing.T) {
 				t.Errorf("expected error %v, got %v", tt.wantErr, err)
 			}
 
+			if tt.wantErr == nil {
+				return
+			}
+
 			if rules != nil {
 				t.Errorf("expected no rules to be returned, got %v", rules)
 			}
@@ -422,6 +434,55 @@ func extractOrder(t *testing.T, rule AstRuleT) []string {
 	}
 
 	return order
+}
+
+func TestSuccessExamples(t *testing.T) {
+
+	rules, err := filepath.Glob(filepath.Join("../testdata", "success_examples", "*.yaml"))
+	if err != nil {
+		t.Fatalf("Error finding CRE test files: %v", err)
+	}
+
+	for _, rule := range rules {
+
+		t.Run(filepath.Base(rule), func(t *testing.T) {
+			testData, err := os.ReadFile(rule)
+			if err != nil {
+				t.Fatalf("Error reading test file %s: %v", rule, err)
+			}
+
+			_, err = ParseRules(testData, WithStrict(true))
+			if err != nil {
+				t.Fatalf("Error building rule %s: %v", rule, err)
+			}
+		})
+	}
+}
+
+func TestFailureExamples(t *testing.T) {
+
+	rules, err := filepath.Glob(filepath.Join("../testdata", "failure_examples", "*.yaml"))
+	if err != nil {
+		t.Fatalf("Error finding CRE test files: %v", err)
+	}
+
+	for _, rule := range rules {
+
+		t.Run(filepath.Base(rule), func(t *testing.T) {
+
+			testData, err := os.ReadFile(rule)
+			if err != nil {
+				t.Fatalf("Error reading test file %s: %v", rule, err)
+			}
+
+			_, err = ParseRules(testData, WithStrict(true))
+
+			if err == nil {
+				t.Fatalf("expected failure, got nil")
+			}
+
+		})
+	}
 }
 
 // import (

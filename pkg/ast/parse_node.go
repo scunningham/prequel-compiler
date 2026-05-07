@@ -113,7 +113,34 @@ func (p *parserT) parseInnerNode(state ruleState, ty AstNodeType, node ast.Node)
 		}
 	}
 
+	p.maybeFixupEventOrigin(proto, state)
+
 	return p.constructNode(state, child, mapping, proto)
+}
+
+// If not strict and no origin specified, determine if there is exactly
+// one leaf term in the rule, and if so, assign origin to that term.
+// This is deprecated behavior; new rules should explicitly specify an origin.
+func (p *parserT) maybeFixupEventOrigin(proto protoNode, state ruleState) {
+
+	switch {
+	case p.strict:
+		// In strict mode, origin must be explicitly specified; do not attempt to infer or assign it.
+	case state.getOrigin() > 0:
+		// If origin is already set, do not attempt to infer or assign it.
+	case state.addr != nil:
+		// If this is not the root node, do not attempt to infer or assign origin; it must be set at the root level if applicable.
+	case len(proto.terms) == 0:
+		// If there are no match/order terms, do not attempt to infer or assign origin.
+	case proto.terms[0].leaf == nil:
+		// Either all leaves or no leaves; if the first term is not a leaf, do not attempt to infer or assign origin.
+	case proto.event == nil:
+		// If there is no event, do not attempt to infer or assign origin; origin only applies if there is an event.
+	default:
+		// Force origin to be true and increment the origin count in the state to reflect this assignment.
+		proto.event.Origin = true
+		state.incOrigin()
+	}
 }
 
 func (p *parserT) parseWindow(node ast.Node) (time.Duration, error) {

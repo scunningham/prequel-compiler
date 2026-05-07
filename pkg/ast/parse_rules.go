@@ -122,6 +122,21 @@ func (p *parserT) parseRuleNode(node ast.Node) (*AstRuleT, error) {
 	return rule, nil
 }
 
+func (p *parserT) validateOrigin(ruleState ruleState, root AstNode) error {
+
+	originCnt := ruleState.getOrigin()
+	switch {
+	case originCnt == 1:
+		return nil
+	case originCnt > 1:
+		return ErrMultipleOrigin
+	case p.strict:
+		return ErrMissingOrigin
+	}
+
+	return ErrMissingOrigin
+}
+
 // At the root, expecting:
 // type ParseRuleDataT struct {
 // 	Sequence *ParseSequenceT `yaml:"sequence,omitempty"`
