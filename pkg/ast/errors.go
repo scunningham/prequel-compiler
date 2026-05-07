@@ -29,8 +29,9 @@ var (
 	ErrBadScriptCode    = errors.New("script code is not valid")
 	ErrBadAnchor        = errors.New("anchor value is out of range")
 	ErrMissingTerm      = errors.New("at least one term is required")
-	ErrShortSequence    = errors.New("a sequence must have at least 2 terms")
-	ErrMissingEvent     = errors.New("an event is required when using leaf terms")
+	ErrShortSequence    = errors.New("sequence must have at least 2 terms")
+	ErrMissingEvent     = errors.New("event is required when using leaf terms")
+	ErrMissingWindow    = errors.New("window is required when using multiple terms")
 	ErrorWindowNegative = errors.New("window duration cannot be negative")
 )
 

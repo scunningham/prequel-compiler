@@ -347,6 +347,12 @@ func TestAstFail(t *testing.T) {
 			wantErr: ErrMissingKey,
 			wantPos: 203,
 		},
+		{
+			name:    "Fail_MissingWindow",
+			yaml:    testdata.TestFailMissingWindow,
+			wantErr: ErrMissingWindow,
+			wantPos: 151,
+		},
 	}
 
 	for _, tt := range tests {

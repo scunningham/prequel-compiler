@@ -1124,3 +1124,19 @@ rules:
               match:
                 - regex: "io.vertx.core.VertxException: Thread blocked"
 `
+
+var TestFailMissingWindow = `
+rules:
+  - cre:
+      id: TestMissingWindow
+    metadata:
+      id: "J7uRQTGpGMyL1iFpssnB3S"
+      hash: "rdJLgqYgkEp8jg8Qks1qqq"
+    rule:
+      set:
+        event:
+          source: kafka
+        match:
+          - raw1
+          - raw2
+`

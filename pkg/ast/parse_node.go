@@ -34,7 +34,7 @@ func (p *parserT) parseInnerNode(state ruleState, ty AstNodeType, node ast.Node)
 	}
 
 	var (
-		proto      = protoNode{ty: ty}
+		proto      = protoNode{ty: ty, window: -1} // Default to -1 to indicate no window specified; a window of 0 is valid and means "match events that occur at the same time".}
 		child      = state.pushNode(ty).setRank(0) // Reset the rank for the child node; the parent rank should not affect the rank of terms within a set or sequence.
 		negateNode ast.Node
 	)
@@ -99,6 +99,8 @@ func (p *parserT) parseInnerNode(state ruleState, ty AstNodeType, node ast.Node)
 		return nil, p.wrapErrorParent(mapping, ErrMissingTerm)
 	case ty == AstNodeTypeSeq && len(proto.terms) == 1 && proto.terms[0].count() <= 1:
 		return nil, p.wrapError(findKey(mapping, kwOrder), ErrShortSequence)
+	case proto.window < 0 && len(proto.terms) > 1:
+		return nil, p.wrapErrorParent(mapping, ErrMissingWindow)
 	}
 
 	if negateNode != nil {
