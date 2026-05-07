@@ -380,7 +380,7 @@ func TestAstFail(t *testing.T) {
 				}
 				if perr.Offset() != tt.wantPos {
 					t.Errorf("expected error at position %d, got %d", tt.wantPos, perr.Offset())
-					t.Logf("%v", perr.FormatError(false, true))
+					t.Logf("%v", perr.Format(false, true))
 				}
 
 			}

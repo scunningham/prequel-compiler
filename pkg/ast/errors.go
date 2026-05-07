@@ -82,6 +82,6 @@ func (e ParseError) Error() string {
 	return e.err.Error()
 }
 
-func (e ParseError) FormatError(colored, inclSource bool) string {
+func (e ParseError) Format(colored, inclSource bool) string {
 	return yaml.FormatErrorWithToken(e.err.Error(), e.token, colored, inclSource)
 }
