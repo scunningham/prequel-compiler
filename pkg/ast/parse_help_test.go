@@ -252,6 +252,12 @@ func TestNodeToRegex(t *testing.T) {
 			nil,
 			true,
 		},
+		{
+			"empty regex",
+			&ast.StringNode{Value: ""},
+			nil,
+			true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -287,6 +293,7 @@ func TestNodeToJq(t *testing.T) {
 		{"ok", &ast.StringNode{Value: ".foo"}, ".foo", false},
 		{"bad jq", &ast.StringNode{Value: "bad"}, "", true},
 		{"not string", &ast.IntegerNode{Value: int64(1)}, "", true},
+		{"empty string", &ast.StringNode{Value: ""}, "", true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

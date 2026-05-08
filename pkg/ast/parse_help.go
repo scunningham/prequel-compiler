@@ -3,7 +3,6 @@ package ast
 import (
 	"errors"
 	"fmt"
-	"math"
 	"regexp"
 	"time"
 
@@ -100,12 +99,12 @@ func (p *parserT) nodeToUint(v ast.Node) (uint, error) {
 	if err != nil {
 		return 0, err
 	}
-	if n > math.MaxUint {
-		// This is a theoretical limit since uint is typically either 32 or 64 bits depending on the platform,
-		// but we enforce it to prevent potential overflow issues when converting from uint64 to uint.
-		err := fmt.Errorf("%w: value must be a positive integer", ErrOverflow)
-		return 0, p.wrapError(v, err)
-	}
+	// if n > math.MaxUint {
+	// 	// This is a theoretical limit since uint is typically either 32 or 64 bits depending on the platform,
+	// 	// but we enforce it to prevent potential overflow issues when converting from uint64 to uint.
+	// 	err := fmt.Errorf("%w: value must be a positive integer", ErrOverflow)
+	// 	return 0, p.wrapError(v, err)
+	// }
 	return uint(n), nil
 }
 
@@ -144,6 +143,10 @@ func (p *parserT) nodeToRegex(node ast.Node) (*regexp.Regexp, error) {
 	if err != nil {
 		return nil, p.wrapError(node, err)
 	}
+	if v == "" {
+		err := fmt.Errorf("%w: regex pattern cannot be empty", ErrBadRegex)
+		return nil, p.wrapError(node, err)
+	}
 	exp, err := regexp.Compile(v)
 	if err != nil {
 		err = errors.Join(ErrBadRegex, err)
@@ -157,7 +160,10 @@ func (p *parserT) nodeToJq(node ast.Node) (string, error) {
 	if err != nil {
 		return "", p.wrapError(node, err)
 	}
-
+	if v == "" {
+		err := fmt.Errorf("%w: jq expression cannot be empty", ErrBadJq)
+		return "", p.wrapError(node, err)
+	}
 	if err := p.validateJQ(v); err != nil {
 		err := errors.Join(ErrBadJq, err)
 		return "", p.wrapError(node, err)

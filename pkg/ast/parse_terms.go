@@ -81,8 +81,8 @@ func (p *parserT) parseTerm(state ruleState, node ast.Node, negateOffset int) (*
 
 	// A term which can be either a simple string or a mapping.
 	// If the term is a mapping type, parse it as such. Otherwise, treat it as a simple string term.
-	if node.Type() == ast.MappingType {
-		return p.parseTermAsMap(state, node, negateOffset)
+	if mapping, ok := node.(*ast.MappingNode); ok {
+		return p.parseTermAsMap(state, mapping, negateOffset)
 	}
 
 	s, err := p.nodeToString(node)
@@ -122,14 +122,10 @@ func (p *parserT) parseTerm(state ruleState, node ast.Node, negateOffset int) (*
 //		NegateOpts *ParseNegateOptsT `yaml:",inline,omitempty"`
 //
 
-func (p *parserT) parseTermAsMap(state ruleState, node ast.Node, negateOffset int) (*protoTerm, error) {
-
-	mapping, err := p.nodeToMapping(node)
-	if err != nil {
-		return nil, err
-	}
+func (p *parserT) parseTermAsMap(state ruleState, mapping *ast.MappingNode, negateOffset int) (*protoTerm, error) {
 
 	var (
+		err   error
 		child AstNode
 		field *protoField
 		nOpts *AstNegateOptsT
@@ -147,20 +143,18 @@ func (p *parserT) parseTermAsMap(state ruleState, node ast.Node, negateOffset in
 		switch key.Value {
 
 		case kwSet, kwSequence, kwPromQL, kwScript:
-			// Only one child or field allowed; if either is already set, this is an error.
+			// Only one child or field allowed; if either is already defined, this is an error.
 			if child != nil || field != nil {
-				err := fmt.Errorf("%w: conflicting term keys", ErrUnexpectedKey)
-				return nil, p.wrapError(v.Key, err)
+				return nil, p.wrapError(v.Key, ErrTermRedefined)
 			}
 			if child, err = p.parseTermChild(state, key, v.Value, nOpts); err != nil {
 				return nil, err
 			}
 
 		case kwField, kwValue, kwJq, kwRegex, kwCount, kwExtract:
-			// Only one child or field allowed; if child is already set, this is an error.
+			// Only one child or field allowed; if child is already defined, this is an error.
 			if child != nil {
-				err := fmt.Errorf("%w: conflicting term keys", ErrUnexpectedKey)
-				return nil, p.wrapError(v.Key, err)
+				return nil, p.wrapError(v.Key, ErrTermRedefined)
 			}
 			if field == nil {
 				field = &protoField{Count: 1}
@@ -173,7 +167,7 @@ func (p *parserT) parseTermAsMap(state ruleState, node ast.Node, negateOffset in
 			// Negate options are only allowed if there is a non-zero negate offset,
 			// which indicates that we are parsing terms in the context of a negate clause.
 			if negateOffset == 0 {
-				err := fmt.Errorf("%w: negate options are not allowed in this context", ErrUnexpectedKey)
+				err := fmt.Errorf("%w: negate options not allowed on positive term", ErrUnexpectedKey)
 				return nil, p.wrapError(key, err)
 			}
 			if nOpts == nil {
@@ -185,6 +179,12 @@ func (p *parserT) parseTermAsMap(state ruleState, node ast.Node, negateOffset in
 
 		default:
 			return nil, p.wrapError(v.Key, ErrUnexpectedKey)
+		}
+	}
+
+	if field != nil {
+		if err := field.validate(); err != nil {
+			return nil, p.wrapErrorParent(mapping, err)
 		}
 	}
 
@@ -220,8 +220,8 @@ func (p *parserT) parseTermChild(state ruleState, key *ast.StringNode, val ast.N
 		return p.parseScriptNode(state, val)
 
 	default:
-		err := fmt.Errorf("%w: unexpected key '%s' in term definition", ErrUnexpectedKey, key.Value)
-		return nil, p.wrapError(key, err)
+		// Should not happen; parseTermAsMap should only call this on expected keys.
+		return nil, p.wrapError(key, ErrUnexpectedKey)
 	}
 }
 
@@ -251,9 +251,9 @@ func (p *parserT) parseTermField(key *ast.StringNode, v ast.Node, match *protoFi
 		case err != nil:
 			// fall through
 		case match.Count == 0:
-			err = ErrZeroCount
+			err = p.wrapError(key, ErrZeroCount)
 		case allowNegate && match.Count > 1:
-			err = ErrNegateCount
+			err = p.wrapError(key, ErrNegateCount)
 		}
 
 	case kwExtract:
@@ -263,9 +263,8 @@ func (p *parserT) parseTermField(key *ast.StringNode, v ast.Node, match *protoFi
 		if hasValue {
 			err = mkMatchKeyError()
 		} else {
-			match.JqValue, err = p.nodeToString(v)
+			match.JqValue, err = p.nodeToJq(v)
 		}
-		// TODO: validate jq if hook available.
 
 	case kwRegex:
 		if hasValue {
@@ -282,11 +281,14 @@ func (p *parserT) parseTermField(key *ast.StringNode, v ast.Node, match *protoFi
 			err = mkMatchKeyError()
 		} else {
 			match.StrValue, err = p.nodeToString(v)
+			if err == nil && match.StrValue == "" {
+				err = p.wrapError(v, fmt.Errorf("%w: value cannot be empty", ErrBadField))
+			}
 		}
 
 	default:
-		kerr := fmt.Errorf("%w: expected line matching key, got %s", ErrUnexpectedKey, key)
-		err = p.wrapError(key, kerr)
+		// Should not happen; parseTermAsMap should only call this on expected keys.
+		err = p.wrapError(key, ErrUnexpectedKey)
 	}
 
 	return err
@@ -317,12 +319,7 @@ func (p *parserT) parseNegateOpts(key string, node ast.Node, opts *AstNegateOpts
 		}
 
 	case kwAbsolute:
-		if absNode, ok := node.(*ast.BoolNode); !ok {
-			err = fmt.Errorf("%w: expected absolute value to be a boolean, got %s", ErrUnexpectedType, node.Type())
-			err = p.wrapError(node, err)
-		} else {
-			opts.Absolute = absNode.Value
-		}
+		opts.Absolute, err = p.nodeToBool(node)
 
 	default:
 		// Should not happen; parseTermAsMap should only call this on expected keys.

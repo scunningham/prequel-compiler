@@ -11,6 +11,7 @@ import (
 var (
 	ErrBadAnchor        = errors.New("anchor value is out of range")
 	ErrBadExtractName   = errors.New("extract name is not valid")
+	ErrBadField         = errors.New("field is not valid")
 	ErrBadHash          = errors.New("hash is not valid")
 	ErrBadIdentifier    = errors.New("identifier is not valid")
 	ErrBadJq            = errors.New("invalid jq expression")
@@ -34,6 +35,7 @@ var (
 	ErrOverflow         = errors.New("value overflow")
 	ErrShortSequence    = errors.New("sequence must have at least 2 terms")
 	ErrTermTypeConflict = errors.New("term type conflicts with previous term type")
+	ErrTermRedefined    = errors.New("term previously defined")
 	ErrUnexpectedKey    = errors.New("unexpected key")
 	ErrUnexpectedType   = errors.New("unexpected type")
 	ErrUndefinedAnchor  = errors.New("undefined anchor")

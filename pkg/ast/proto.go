@@ -1,6 +1,7 @@
 package ast
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/prequel-dev/prequel-logmatch/pkg/match"
@@ -100,4 +101,29 @@ func (f *protoField) ToField(nOpts *AstNegateOptsT) AstFieldT {
 	}
 
 	return t
+}
+
+// Validate the protoField to ensure it has a valid configuration.
+// One of StrValue, JqValue, RegexValue must be set.
+func (f *protoField) validate() error {
+
+	var cnt int
+	if f.StrValue != "" {
+		cnt++
+	}
+	if f.JqValue != "" {
+		cnt++
+	}
+	if f.RegexValue != "" {
+		cnt++
+	}
+
+	switch cnt {
+	case 1:
+		return nil
+	case 0:
+		return fmt.Errorf("%w: one of ['%s','%s','%s'] must be set", ErrBadField, kwValue, kwJq, kwRegex)
+	default:
+		return fmt.Errorf("%w: only one of ['%s','%s','%s'] can be set", ErrBadField, kwValue, kwJq, kwRegex)
+	}
 }
