@@ -217,8 +217,6 @@ func (p *parserT) constructNode(parent, child ruleState, mapping *ast.MappingNod
 		return nil, p.wrapError(findKey(mapping, kwEvent), err)
 	}
 
-	// TODO: Validate anchors in negate terms; should be in range of [1, len(terms))
-
 	var node AstNode
 
 	switch {

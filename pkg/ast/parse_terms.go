@@ -7,7 +7,10 @@ import (
 	"github.com/goccy/go-yaml/ast"
 )
 
-// Terms node expects a sequence of terms,
+// parseTerms is responsible for parsing a sequence of terms,
+// which can be either line match terms (leaf nodes) or set/sequence/promql/script terms (inner nodes).
+// A non-zero negateOffset indicates that these terms are being parsed in the context of a negate clause.
+// Terms must be all leaf nodes or all inner nodes; mixing is not allowed.
 
 func (p *parserT) parseTerms(state ruleState, v ast.Node, negateOffset int) ([]*protoTerm, error) {
 
@@ -30,6 +33,8 @@ func (p *parserT) parseTerms(state ruleState, v ast.Node, negateOffset int) ([]*
 			return nil, p.wrapError(termNode, err)
 		}
 
+		// Parse the term, which can be either a leaf node or an inner node.
+		// We determine this based on the first term, and then enforce that all subsequent terms are of the same type.
 		term, err := p.parseTerm(state, termNode, negateOffset)
 
 		switch {
@@ -37,31 +42,37 @@ func (p *parserT) parseTerms(state ruleState, v ast.Node, negateOffset int) ([]*
 			return nil, err
 
 		case i == 0:
-			// First term; determine if this is a leaf term or an inner node term, and set the allLeaves flag accordingly.
+			// First term; determine if this is a leaf term or an inner node term,
+			// and set the allLeaves flag accordingly.
 			allLeaves = term.leaf != nil
 
 		case allLeaves && term.leaf == nil:
+			// This term is an inner node, but previous terms were leaf nodes; this is not allowed.
 			err := fmt.Errorf("%w: all terms must be leaves", ErrUnexpectedType)
 			return nil, p.wrapError(termNode, err)
 
 		case !allLeaves && term.leaf != nil:
+			// This term is a leaf node, but previous terms were inner nodes; this is not allowed.
 			err := fmt.Errorf("%w: all terms must be inner nodes", ErrUnexpectedType)
 			return nil, p.wrapError(termNode, err)
 
+		default:
+			// Term type is consistent with previous terms; continue.
 		}
 
+		// Term is valid; add to list
 		terms = append(terms, term)
 
+		// Increment the rank for the next term.
 		state = state.incRank()
 	}
 
 	return terms, nil
 }
 
-// A term which can be either a simple string or a mapping.
-
 func (p *parserT) parseTerm(state ruleState, node ast.Node, negateOffset int) (*protoTerm, error) {
 
+	// A term which can be either a simple string or a mapping.
 	// If the term is a mapping type, parse it as such. Otherwise, treat it as a simple string term.
 	if node.Type() == ast.MappingType {
 		return p.parseTermAsMap(state, node, negateOffset)
@@ -78,6 +89,9 @@ func (p *parserT) parseTerm(state ruleState, node ast.Node, negateOffset int) (*
 		},
 	}, nil
 }
+
+// A non-zero negateOffset indicates that these terms are being parsed in the context of a negate clause,
+// and the offset is used to validate any anchors.
 
 // This is where it gets interesting.
 //
