@@ -30,7 +30,7 @@ var (
 	ErrBadAnchor        = errors.New("anchor value is out of range")
 	ErrMissingTerm      = errors.New("at least one term is required")
 	ErrShortSequence    = errors.New("sequence must have at least 2 terms")
-	ErrMissingEvent     = errors.New("event is required when using leaf terms")
+	ErrMissingEvent     = errors.New("event is required when using field terms")
 	ErrMissingWindow    = errors.New("window is required when using multiple terms")
 	ErrWindowNegative   = errors.New("window duration cannot be negative")
 	ErrMissingSource    = errors.New("source is required in event")

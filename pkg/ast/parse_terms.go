@@ -69,6 +69,10 @@ func (p *parserT) parseTerms(state ruleState, v ast.Node, negateOffset int) ([]*
 		state = state.incRank()
 	}
 
+	if p.strict && len(terms) == 0 {
+		return nil, p.wrapError(v, ErrMissingTerm)
+	}
+
 	return terms, nil
 }
 
