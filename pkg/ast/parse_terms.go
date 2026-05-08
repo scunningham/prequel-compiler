@@ -8,19 +8,20 @@ import (
 )
 
 // parseTerms is responsible for parsing a sequence of terms,
-// which can be either line match terms (leaf nodes) or set/sequence/promql/script terms (inner nodes).
+// which can be either line match terms (field nodes) or set/sequence/promql/script terms (child nodes).
 // A non-zero negateOffset indicates that these terms are being parsed in the context of a negate clause.
-// Terms must be all leaf nodes or all inner nodes; mixing is not allowed.
+// Terms must be all field nodes or all child nodes; mixing is not allowed.
 
 func (p *parserT) parseTerms(state ruleState, v ast.Node, negateOffset int) ([]*protoTerm, error) {
 
+	// Expects the terms to be defined as a sequence node. If it's not a sequence, this will return an error.
 	seq, err := p.nodeToSequence(v)
 	if err != nil {
 		return nil, err
 	}
 
 	var (
-		allLeaves bool
+		allFields bool
 		terms     []*protoTerm
 	)
 
@@ -42,18 +43,18 @@ func (p *parserT) parseTerms(state ruleState, v ast.Node, negateOffset int) ([]*
 			return nil, err
 
 		case i == 0:
-			// First term; determine if this is a leaf term or an inner node term,
-			// and set the allLeaves flag accordingly.
-			allLeaves = term.leaf != nil
+			// First term; determine if this is a field term or a child node term,
+			// and set the allFields flag accordingly.
+			allFields = term.field != nil
 
-		case allLeaves && term.leaf == nil:
-			// This term is an inner node, but previous terms were leaf nodes; this is not allowed.
-			err := fmt.Errorf("%w: all terms must be leaves", ErrUnexpectedType)
+		case allFields && term.field == nil:
+			// This term is a child node, but previous terms were field nodes; this is not allowed.
+			err := fmt.Errorf("%w: all terms must be field nodes", ErrUnexpectedType)
 			return nil, p.wrapError(termNode, err)
 
-		case !allLeaves && term.leaf != nil:
-			// This term is a leaf node, but previous terms were inner nodes; this is not allowed.
-			err := fmt.Errorf("%w: all terms must be inner nodes", ErrUnexpectedType)
+		case !allFields && term.field != nil:
+			// This term is a field node, but previous terms were child nodes; this is not allowed.
+			err := fmt.Errorf("%w: all terms must be child nodes", ErrUnexpectedType)
 			return nil, p.wrapError(termNode, err)
 
 		default:
@@ -84,7 +85,7 @@ func (p *parserT) parseTerm(state ruleState, node ast.Node, negateOffset int) (*
 	}
 
 	return &protoTerm{
-		leaf: &protoField{
+		field: &protoField{
 			StrValue: s,
 		},
 	}, nil
@@ -146,7 +147,7 @@ func (p *parserT) parseTermAsMap(state ruleState, node ast.Node, negateOffset in
 				err := fmt.Errorf("%w: multiple term keys found in term definition", ErrUnexpectedKey)
 				return nil, p.wrapError(v.Key, err)
 			}
-			inner, err = p.parseTermInner(state, key, v.Value, nOpts)
+			inner, err = p.parseTermChild(state, key, v.Value, nOpts)
 			if err != nil {
 				return nil, err
 			}
@@ -183,12 +184,12 @@ func (p *parserT) parseTermAsMap(state ruleState, node ast.Node, negateOffset in
 
 	return &protoTerm{
 		negateOpts: nOpts,
-		inner:      inner,
-		leaf:       leaf,
+		child:      inner,
+		field:      leaf,
 	}, nil
 }
 
-func (p *parserT) parseTermInner(state ruleState, key *ast.StringNode, val ast.Node, nOpts *AstNegateOptsT) (AstNode, error) {
+func (p *parserT) parseTermChild(state ruleState, key *ast.StringNode, val ast.Node, nOpts *AstNegateOptsT) (AstNode, error) {
 
 	switch key.Value {
 

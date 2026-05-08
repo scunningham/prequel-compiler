@@ -15,16 +15,16 @@ type protoNode struct {
 	negate       []*protoTerm
 }
 
+// A protoTerm represents either a field term or a child node term in the proto representation of the rule.
 type protoTerm struct {
-	leaf       *protoField
-	inner      AstNode
-	promNode   *AstPromT
+	field      *protoField
+	child      AstNode
 	negateOpts *AstNegateOptsT
 }
 
 func (t protoTerm) count() uint64 {
-	if t.leaf != nil {
-		return t.leaf.Count
+	if t.field != nil {
+		return t.field.Count
 	}
 	return 1
 }
@@ -41,8 +41,8 @@ type protoField struct {
 func protoTermsToAstFields(terms []*protoTerm) []AstFieldT {
 	var fields []AstFieldT
 	for _, term := range terms {
-		if term.leaf != nil {
-			fields = append(fields, term.leaf.ToField(term.negateOpts))
+		if term.field != nil {
+			fields = append(fields, term.field.ToField(term.negateOpts))
 		}
 	}
 	return fields
@@ -51,9 +51,9 @@ func protoTermsToAstFields(terms []*protoTerm) []AstFieldT {
 func protoTermsToAstTerms(terms []*protoTerm) []AstTermT {
 	var termsList []AstTermT
 	for _, term := range terms {
-		if term.inner != nil {
+		if term.child != nil {
 			termsList = append(termsList, AstTermT{
-				Term:       term.inner,
+				Term:       term.child,
 				NegateOpts: term.negateOpts,
 			})
 		}

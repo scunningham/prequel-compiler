@@ -167,8 +167,8 @@ func (p *parserT) maybeFixupEventOrigin(proto protoNode, state ruleState) {
 		// If this is not the root node, do not attempt to infer or assign origin; it must be set at the root level if applicable.
 	case len(proto.terms) == 0:
 		// If there are no match/order terms, do not attempt to infer or assign origin.
-	case proto.terms[0].leaf == nil:
-		// Either all leaves or no leaves; if the first term is not a leaf, do not attempt to infer or assign origin.
+	case proto.terms[0].field == nil:
+		// Either all fields or no fields; if the first term is not a field, do not attempt to infer or assign origin.
 	case proto.event == nil:
 		// If there is no event, do not attempt to infer or assign origin; origin only applies if there is an event.
 	default:
@@ -196,31 +196,33 @@ func (p *parserT) parseWindow(node ast.Node) (time.Duration, error) {
 
 func (p *parserT) constructNode(parent, child ruleState, mapping *ast.MappingNode, proto *protoNode) (AstNode, error) {
 
-	// If there are negate terms, they must either all be leaf terms or all inner node terms,
+	// If there are negate terms, they must either all be field terms or all child node terms,
 	// and they must match the type of the match/order terms.
-	allLeaves := proto.terms[0].leaf != nil
+	allFields := proto.terms[0].field != nil
 
 	if len(proto.negate) > 0 {
-		if negateAllLeaves := proto.negate[0].leaf != nil; allLeaves != negateAllLeaves {
-			err := fmt.Errorf("%w: match terms and negate terms must both be either leaves or inner nodes", ErrUnexpectedType)
+		if negateAllFields := proto.negate[0].field != nil; allFields != negateAllFields {
+			err := fmt.Errorf("%w: match terms and negate terms must both be either field nodes or child nodes", ErrUnexpectedType)
 			return nil, p.wrapErrorParent(mapping, err)
 		}
 	}
 
 	// Confirm that the event key is set if required, and not set otherwise.
 	switch {
-	case allLeaves && proto.event == nil:
+	case allFields && proto.event == nil:
 		return nil, p.wrapErrorParent(mapping, ErrMissingEvent)
 
-	case !allLeaves && proto.event != nil:
-		err := fmt.Errorf("%w: an event is not allowed when using inner node terms", ErrUnexpectedKey)
+	case !allFields && proto.event != nil:
+		err := fmt.Errorf("%w: an event is not allowed when using child node terms", ErrUnexpectedKey)
 		return nil, p.wrapError(findKey(mapping, kwEvent), err)
 	}
+
+	// TODO: Validate anchors in negate terms; should be in range of [1, len(terms))
 
 	var node AstNode
 
 	switch {
-	case !allLeaves:
+	case !allFields:
 		node = p.constructInnerNode(parent, child, proto)
 	default:
 		node = p.constructLeafNode(parent, child, proto)
