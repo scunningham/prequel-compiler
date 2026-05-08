@@ -96,7 +96,7 @@ func (p *parserT) parseScriptInput(state ruleState, node ast.Node) (AstNode, err
 		return nil, p.wrapError(v.Key, err)
 	}
 
-	return p.parseTermChild(state, key, v.Value, nil)
+	return p.parseTermInner(state, key, v.Value, nil)
 }
 
 func (p *parserT) parseScriptLang(node ast.Node) (string, error) {

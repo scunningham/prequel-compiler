@@ -17,7 +17,7 @@ type protoNode struct {
 
 type protoTerm struct {
 	leaf       *protoField
-	child      AstNode
+	inner      AstNode
 	promNode   *AstPromT
 	negateOpts *AstNegateOptsT
 }
@@ -51,9 +51,9 @@ func protoTermsToAstFields(terms []*protoTerm) []AstFieldT {
 func protoTermsToAstTerms(terms []*protoTerm) []AstTermT {
 	var termsList []AstTermT
 	for _, term := range terms {
-		if term.child != nil {
+		if term.inner != nil {
 			termsList = append(termsList, AstTermT{
-				Term:       term.child,
+				Term:       term.inner,
 				NegateOpts: term.negateOpts,
 			})
 		}

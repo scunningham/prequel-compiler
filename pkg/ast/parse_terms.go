@@ -126,7 +126,7 @@ func (p *parserT) parseTermAsMap(state ruleState, node ast.Node, negateOffset in
 	}
 
 	var (
-		child AstNode
+		inner AstNode
 		leaf  *protoField
 		nOpts *AstNegateOptsT
 	)
@@ -142,17 +142,17 @@ func (p *parserT) parseTermAsMap(state ruleState, node ast.Node, negateOffset in
 		switch key.Value {
 
 		case kwSet, kwSequence, kwPromQL, kwScript:
-			if child != nil || leaf != nil {
+			if inner != nil || leaf != nil {
 				err := fmt.Errorf("%w: multiple term keys found in term definition", ErrUnexpectedKey)
 				return nil, p.wrapError(v.Key, err)
 			}
-			child, err = p.parseTermChild(state, key, v.Value, nOpts)
+			inner, err = p.parseTermInner(state, key, v.Value, nOpts)
 			if err != nil {
 				return nil, err
 			}
 
 		case kwField, kwValue, kwJq, kwRegex, kwCount, kwExtract:
-			if child != nil {
+			if inner != nil {
 				err := fmt.Errorf("%w: multiple term keys found in term definition", ErrUnexpectedKey)
 				return nil, p.wrapError(v.Key, err)
 			}
@@ -183,12 +183,12 @@ func (p *parserT) parseTermAsMap(state ruleState, node ast.Node, negateOffset in
 
 	return &protoTerm{
 		negateOpts: nOpts,
-		child:      child,
+		inner:      inner,
 		leaf:       leaf,
 	}, nil
 }
 
-func (p *parserT) parseTermChild(state ruleState, key *ast.StringNode, val ast.Node, nOpts *AstNegateOptsT) (AstNode, error) {
+func (p *parserT) parseTermInner(state ruleState, key *ast.StringNode, val ast.Node, nOpts *AstNegateOptsT) (AstNode, error) {
 
 	switch key.Value {
 
