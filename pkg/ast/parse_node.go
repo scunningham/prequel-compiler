@@ -7,13 +7,12 @@ import (
 	"github.com/goccy/go-yaml/ast"
 )
 
-// type ParseSetT struct {
 // 	Window       string       `yaml:"window,omitempty"`
 // 	Correlations []string     `yaml:"correlations,omitempty"`
 // 	Event        *ParseEventT `yaml:"event,omitempty"`
 // 	Match        []ParseTermT `yaml:"match,omitempty"`
+// 	Order        []ParseTermT `yaml:"order,omitempty"`
 // 	Negate       []ParseTermT `yaml:"negate,omitempty"`
-// }
 
 func (p *parserT) parseInnerNode(state ruleState, ty AstNodeType, node ast.Node) (AstNode, error) {
 

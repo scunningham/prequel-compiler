@@ -101,6 +101,8 @@ func (p *parserT) nodeToUint(v ast.Node) (uint, error) {
 		return 0, err
 	}
 	if n > math.MaxUint {
+		// This is a theoretical limit since uint is typically either 32 or 64 bits depending on the platform,
+		// but we enforce it to prevent potential overflow issues when converting from uint64 to uint.
 		err := fmt.Errorf("%w: value must be a positive integer", ErrOverflow)
 		return 0, p.wrapError(v, err)
 	}
