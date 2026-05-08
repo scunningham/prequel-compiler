@@ -51,12 +51,16 @@ func WithMaxGen(maxGen uint32) ParseOpt {
 	}
 }
 
+// WithMaxRank sets the maximum allowed rank for terms in the YAML input.
+// This is a safeguard against excessively large numbers of terms that could lead to performance issues during parsing.
 func WithMaxRank(maxRank uint32) ParseOpt {
 	return func(opts *optT) {
 		opts.maxRank = maxRank
 	}
 }
 
+// WithMaxDepth sets the maximum allowed depth for rule definitions in the YAML input.
+// This is a safeguard against excessively nested structures that could lead to stack overflows or performance issues during parsing.
 func WithMaxDepth(maxDepth uint32) ParseOpt {
 	return func(opts *optT) {
 		opts.maxDepth = maxDepth

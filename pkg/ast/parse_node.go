@@ -21,22 +21,19 @@ func (p *parserT) parseInnerNode(state ruleState, ty AstNodeType, node ast.Node)
 		return nil, err
 	}
 
-	// Sanity checks
-	switch {
-	case state.addr != nil && state.addr.Depth > p.maxDepth:
-		err := fmt.Errorf("%w: maximum depth exceeded: %d/%d", ErrUnexpectedType, state.addr.Depth, p.maxDepth)
-		return nil, p.wrapError(node, err)
-
-	case state.rank > p.maxRank:
-		err := fmt.Errorf("%w: maximum rank exceeded: %d/%d", ErrUnexpectedType, state.rank, p.maxRank)
-		return nil, p.wrapError(node, err)
-	}
-
 	var (
 		proto      = protoNode{ty: ty, window: -1} // Default to -1 to indicate no window specified; a window of 0 is valid and means "match events that occur at the same time".}
 		child      = state.pushNode(ty).setRank(0) // Reset the rank for the child node; the parent rank should not affect the rank of terms within a set or sequence.
 		negateNode ast.Node
 	)
+
+	// Sanity check on child address depth; this should be after pushing the child node
+	// since that is when the depth is incremented.
+	// Note: maxDepth is one based, whereas addr.Depth is zero based, so we check if Depth+1 exceeds maxDepth.
+	if child.addr.Depth >= p.maxDepth {
+		err := fmt.Errorf("%w: %d", ErrMaxDepthExceeded, p.maxDepth)
+		return nil, p.wrapErrorParent(node, err)
+	}
 
 	for _, v := range mapping.Values {
 

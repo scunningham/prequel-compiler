@@ -166,11 +166,13 @@ func TestAstSuccess(t *testing.T) {
 
 func TestAstFail(t *testing.T) {
 	tests := []struct {
-		name    string
-		yaml    string
-		strict  bool
-		wantErr error
-		wantPos int
+		name     string
+		yaml     string
+		strict   bool
+		maxRank  uint32
+		maxDepth uint32
+		wantErr  error
+		wantPos  int
 	}{
 		{
 			name:    "Fail_MissingPositiveCondition",
@@ -353,12 +355,34 @@ func TestAstFail(t *testing.T) {
 			wantErr: ErrMissingWindow,
 			wantPos: 151,
 		},
+		{
+			name:     "Fail_MaxDepthExceeded",
+			yaml:     testdata.TestFailMaxDepthExceeded,
+			maxDepth: 2,
+			wantErr:  ErrMaxDepthExceeded,
+			wantPos:  234, // Position of the node that exceeds the max depth
+		},
+		{
+			name:    "Fail_MaxRankExceeded",
+			yaml:    testdata.TestFailMaxRankExceeded,
+			maxRank: 3,
+			wantErr: ErrMaxRankExceeded,
+			wantPos: 322, // Position of the node that exceeds the max rank
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 
-			rules, err := ParseRules([]byte(tt.yaml), WithStrict(tt.strict))
+			opts := []ParseOpt{WithStrict(tt.strict)}
+			if tt.maxDepth > 0 {
+				opts = append(opts, WithMaxDepth(tt.maxDepth))
+			}
+			if tt.maxRank > 0 {
+				opts = append(opts, WithMaxRank(tt.maxRank))
+			}
+
+			rules, err := ParseRules([]byte(tt.yaml), opts...)
 
 			ok := checkParserError(t, err, tt.wantErr, tt.wantPos)
 

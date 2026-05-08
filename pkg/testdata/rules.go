@@ -1140,3 +1140,45 @@ rules:
           - raw1
           - raw2
 `
+
+var TestFailMaxDepthExceeded = `
+rules:
+  - cre:
+      id: TestFailMaxDepthExceeded
+    metadata:
+      id: "J7uRQTGpGMyL1iFpssnB3S"
+      hash: "rdJLgqYgkEp8jg8Qks1qqq"
+    rule:
+      set:
+        match:
+          - set:
+              match:
+                - set:
+                    window: 10s
+                    event:
+                      source: kafka
+                      origin: true
+                    match:
+                      - raw1
+                      - raw2
+`
+
+var TestFailMaxRankExceeded = `
+rules:
+  - cre:
+      id: TestFailMaxRankExceeded
+    metadata:
+      id: "J7uRQTGpGMyL1iFpssnB3S"
+      hash: "rdJLgqYgkEp8jg8Qks1qqq"
+    rule:
+      set:
+        window: 10s
+        event:
+          source: kafka
+          origin: true
+        match:
+          - rank0
+          - rank1
+          - rank2
+          - rank3
+`

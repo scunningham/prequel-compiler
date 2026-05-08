@@ -23,6 +23,13 @@ func (p *parserT) parseTerms(state ruleState, v ast.Node, negateOffset int) ([]*
 
 	for i, termNode := range seq.Values {
 
+		// Sanity check on rank; this should be after incrementing the rank for the term.
+		// Note: maxRank is one based, whereas rank is zero based, so we check if rank+1 exceeds maxRank.
+		if state.rank >= p.maxRank {
+			err := fmt.Errorf("%w: %d", ErrMaxRankExceeded, p.maxRank)
+			return nil, p.wrapError(termNode, err)
+		}
+
 		term, err := p.parseTerm(state, termNode, negateOffset)
 
 		switch {
