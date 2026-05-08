@@ -7,8 +7,9 @@ import (
 	"github.com/goccy/go-yaml/ast"
 )
 
-// parseTerms is responsible for parsing a sequence of terms,
-// which can be either line match terms (field nodes) or set/sequence/promql/script terms (child nodes).
+// parseTerms is responsible for parsing a sequence of terms.
+//
+// Terms can be either line match terms (field nodes) or set/sequence/promql/script terms (child nodes).
 // A non-zero negateOffset indicates that these terms are being parsed in the context of a negate clause.
 // Terms must be all field nodes or all child nodes; mixing is not allowed.
 
@@ -71,6 +72,7 @@ func (p *parserT) parseTerms(state ruleState, v ast.Node, negateOffset int) ([]*
 	return terms, nil
 }
 
+// parseTerm is responsible for parsing a single term, which can be either a simple string (field term) or a mapping (field term or child node term).
 func (p *parserT) parseTerm(state ruleState, node ast.Node, negateOffset int) (*protoTerm, error) {
 
 	// A term which can be either a simple string or a mapping.
@@ -91,13 +93,14 @@ func (p *parserT) parseTerm(state ruleState, node ast.Node, negateOffset int) (*
 	}, nil
 }
 
+// parseTermAsMap parses a term that is represented as a YAML mapping.
+// This can represent either a field term (line match) or a child node term (set/sequence/promql/script).
+//
 // A non-zero negateOffset indicates that these terms are being parsed in the context of a negate clause,
 // and the offset is used to validate any anchors.
-
-// This is where it gets interesting.
 //
-//	type ParseTermT struct {
-// 		// LineMatch
+//	Layout is as follows:
+// 		// AstFieldT fields
 //		Field      string            `yaml:"field,omitempty"`
 //		StrValue   string            `yaml:"value,omitempty"`
 //		JqValue    string            `yaml:"jq,omitempty"`
@@ -105,19 +108,15 @@ func (p *parserT) parseTerm(state ruleState, node ast.Node, negateOffset int) (*
 //		Count      int               `yaml:"count,omitempty"`
 //		Extract    []ParseExtractT   `yaml:"extract,omitempty"`
 //
-//		// Recursive terms
+//		// Child terms
 //		Set        *ParseSetT        `yaml:"set,omitempty"`
 //		Sequence   *ParseSequenceT   `yaml:"sequence,omitempty"`
-
-// 		// Applies to linematch and seq/seq
-//		NegateOpts *ParseNegateOptsT `yaml:",inline,omitempty"`
-//
-// 		// Other types of terms
 //		PromQL     *ParsePromQL      `yaml:"promql,omitempty"`
 //		Script     *ParseScriptT     `yaml:"script,omitempty"`
-//	}
 //
-//	A term is either a line match, or a recursive struct.
+// 		// Applies to AstField and  Child terms
+//		NegateOpts *ParseNegateOptsT `yaml:",inline,omitempty"`
+//
 
 func (p *parserT) parseTermAsMap(state ruleState, node ast.Node, negateOffset int) (*protoTerm, error) {
 
@@ -127,13 +126,14 @@ func (p *parserT) parseTermAsMap(state ruleState, node ast.Node, negateOffset in
 	}
 
 	var (
-		inner AstNode
-		leaf  *protoField
+		child AstNode
+		field *protoField
 		nOpts *AstNegateOptsT
 	)
 
 	for _, v := range mapping.Values {
 
+		// Keep the key node around to pass to helper functions; necessary for error wrapping with context.
 		key, ok := v.Key.(*ast.StringNode)
 		if !ok {
 			err := fmt.Errorf("%w: %s", ErrUnexpectedType, v.Key.Type())
@@ -143,28 +143,31 @@ func (p *parserT) parseTermAsMap(state ruleState, node ast.Node, negateOffset in
 		switch key.Value {
 
 		case kwSet, kwSequence, kwPromQL, kwScript:
-			if inner != nil || leaf != nil {
-				err := fmt.Errorf("%w: multiple term keys found in term definition", ErrUnexpectedKey)
+			// Only one child or field allowed; if either is already set, this is an error.
+			if child != nil || field != nil {
+				err := fmt.Errorf("%w: conflicting term keys", ErrUnexpectedKey)
 				return nil, p.wrapError(v.Key, err)
 			}
-			inner, err = p.parseTermChild(state, key, v.Value, nOpts)
-			if err != nil {
+			if child, err = p.parseTermChild(state, key, v.Value, nOpts); err != nil {
 				return nil, err
 			}
 
 		case kwField, kwValue, kwJq, kwRegex, kwCount, kwExtract:
-			if inner != nil {
-				err := fmt.Errorf("%w: multiple term keys found in term definition", ErrUnexpectedKey)
+			// Only one child or field allowed; if child is already set, this is an error.
+			if child != nil {
+				err := fmt.Errorf("%w: conflicting term keys", ErrUnexpectedKey)
 				return nil, p.wrapError(v.Key, err)
 			}
-			if leaf == nil {
-				leaf = &protoField{Count: 1}
+			if field == nil {
+				field = &protoField{Count: 1}
 			}
-			if err := p.parseTermField(key, v.Value, leaf, negateOffset > 0); err != nil {
+			if err := p.parseTermField(key, v.Value, field, negateOffset > 0); err != nil {
 				return nil, err
 			}
 
 		case kwWindow, kwSlide, kwAnchor, kwAbsolute:
+			// Negate options are only allowed if there is a non-zero negate offset,
+			// which indicates that we are parsing terms in the context of a negate clause.
 			if negateOffset == 0 {
 				err := fmt.Errorf("%w: negate options are not allowed in this context", ErrUnexpectedKey)
 				return nil, p.wrapError(key, err)
@@ -172,20 +175,19 @@ func (p *parserT) parseTermAsMap(state ruleState, node ast.Node, negateOffset in
 			if nOpts == nil {
 				nOpts = &AstNegateOptsT{}
 			}
-			if err = p.parseNegateOpts(key.Value, v.Value, nOpts, negateOffset); err != nil {
+			if err := p.parseNegateOpts(key.Value, v.Value, nOpts, negateOffset); err != nil {
 				return nil, err
 			}
 
 		default:
-			err := fmt.Errorf("%w: unexpected key '%s' in term definition", ErrUnexpectedKey, key.Value)
-			return nil, p.wrapError(v.Key, err)
+			return nil, p.wrapError(v.Key, ErrUnexpectedKey)
 		}
 	}
 
 	return &protoTerm{
 		negateOpts: nOpts,
-		child:      inner,
-		field:      leaf,
+		child:      child,
+		field:      field,
 	}, nil
 }
 
