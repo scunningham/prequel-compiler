@@ -10,6 +10,9 @@ import (
 )
 
 type parserT struct {
+	maxGen         uint32
+	maxRank        uint32
+	maxDepth       uint32
 	strict         bool
 	root           ast.Node
 	validateJQ     ValidatorFunc
@@ -21,6 +24,9 @@ func ParseRules(yamlInput []byte, opts ...ParseOpt) ([]AstRuleT, error) {
 	o := parseOpts(opts...)
 
 	p := parserT{
+		maxGen:         o.maxGen,
+		maxRank:        o.maxRank,
+		maxDepth:       o.maxDepth,
 		strict:         o.strict,
 		validateJQ:     o.jqValidator,
 		validateLua:    o.luaValidator,

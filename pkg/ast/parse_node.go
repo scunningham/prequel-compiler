@@ -23,12 +23,12 @@ func (p *parserT) parseInnerNode(state ruleState, ty AstNodeType, node ast.Node)
 
 	// Sanity checks
 	switch {
-	case state.addr != nil && state.addr.Depth > maxDepth:
-		err := fmt.Errorf("%w: maximum depth exceeded: %d/%d", ErrUnexpectedType, state.addr.Depth, maxDepth)
+	case state.addr != nil && state.addr.Depth > p.maxDepth:
+		err := fmt.Errorf("%w: maximum depth exceeded: %d/%d", ErrUnexpectedType, state.addr.Depth, p.maxDepth)
 		return nil, p.wrapError(node, err)
 
-	case state.rank > maxRank:
-		err := fmt.Errorf("%w: maximum rank exceeded: %d/%d", ErrUnexpectedType, state.rank, maxRank)
+	case state.rank > p.maxRank:
+		err := fmt.Errorf("%w: maximum rank exceeded: %d/%d", ErrUnexpectedType, state.rank, p.maxRank)
 		return nil, p.wrapError(node, err)
 	}
 

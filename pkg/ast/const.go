@@ -1,9 +1,9 @@
 package ast
 
 const (
-	maxRank  = 2048
-	maxDepth = 256
-	maxGen   = 128
+	defaultMaxGen   = 128
+	defaultMaxRank  = 2048
+	defaultMaxDepth = 256
 
 	// Root keys
 	kwRules    = "rules"

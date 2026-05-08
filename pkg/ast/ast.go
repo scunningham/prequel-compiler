@@ -60,7 +60,7 @@ type AstMetadataT struct {
 	Id   string
 	Hash string
 	Kind string
-	Gen  uint
+	Gen  uint32
 }
 
 type AstTermT struct {

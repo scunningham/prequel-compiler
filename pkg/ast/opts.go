@@ -6,6 +6,9 @@ type (
 )
 
 type optT struct {
+	maxGen          uint32
+	maxRank         uint32
+	maxDepth        uint32
 	strict          bool
 	jqValidator     ValidatorFunc
 	luaValidator    ValidatorFunc
@@ -42,6 +45,24 @@ func WithPromQLValidator(validator ValidatorFunc) ParseOpt {
 	}
 }
 
+func WithMaxGen(maxGen uint32) ParseOpt {
+	return func(opts *optT) {
+		opts.maxGen = maxGen
+	}
+}
+
+func WithMaxRank(maxRank uint32) ParseOpt {
+	return func(opts *optT) {
+		opts.maxRank = maxRank
+	}
+}
+
+func WithMaxDepth(maxDepth uint32) ParseOpt {
+	return func(opts *optT) {
+		opts.maxDepth = maxDepth
+	}
+}
+
 func selectValidator(validator ValidatorFunc) ValidatorFunc {
 	if validator == nil {
 		return stubValidator
@@ -53,6 +74,9 @@ var stubValidator = func(string) error { return nil }
 
 func parseOpts(opts ...ParseOpt) optT {
 	opt := optT{
+		maxGen:          defaultMaxGen,
+		maxRank:         defaultMaxRank,
+		maxDepth:        defaultMaxDepth,
 		strict:          false,
 		luaValidator:    stubValidator,
 		promQLValidator: stubValidator,

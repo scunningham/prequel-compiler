@@ -95,18 +95,18 @@ func (p *parserT) parseHash(v ast.Node) (string, error) {
 	return s, nil
 }
 
-func (p *parserT) parseGen(v ast.Node) (uint, error) {
+func (p *parserT) parseGen(v ast.Node) (uint32, error) {
 	gen, err := p.nodeToUint64(v)
 	if err != nil {
 		return 0, err
 	}
 	// Sanity check generation number; should be a positive integer, and not unreasonably high.
-	if gen > maxGen {
-		err := fmt.Errorf("%w: generation value must be a positive integer less or equal to %d", ErrBadGen, maxGen)
+	if gen > uint64(p.maxGen) {
+		err := fmt.Errorf("%w: generation value must be a positive integer less or equal to %d", ErrBadGen, p.maxGen)
 		return 0, p.wrapError(v, err)
 	}
 
-	return uint(gen), nil
+	return uint32(gen), nil
 }
 
 func (p *parserT) parseKind(v ast.Node) (string, error) {
