@@ -58,9 +58,7 @@ func (p *parserT) parseScriptNode(state ruleState, node ast.Node) (*AstScriptT, 
 			script.Input, err = p.parseScriptInput(child, v.Value)
 
 		default:
-			if p.strict {
-				err = p.wrapError(v, fmt.Errorf("%w: %s", ErrUnexpectedKey, key))
-			}
+			err = p.wrapError(v, ErrUnexpectedKey)
 		}
 
 		if err != nil {
@@ -69,8 +67,7 @@ func (p *parserT) parseScriptNode(state ruleState, node ast.Node) (*AstScriptT, 
 	}
 
 	if script.Input == nil {
-		err := fmt.Errorf("%w: '%s' key is required in script definition", ErrMissingKey, kwScriptInput)
-		return nil, p.wrapErrorParent(mapping, err)
+		return nil, p.wrapErrorParent(mapping, ErrMissingScriptInput)
 	}
 
 	return &script, nil
@@ -83,20 +80,31 @@ func (p *parserT) parseScriptInput(state ruleState, node ast.Node) (AstNode, err
 		return nil, err
 	}
 
-	if len(mapping.Values) != 1 {
-		err := fmt.Errorf("%w: script input must contain exactly one term definition", ErrUnexpectedKey)
-		return nil, p.wrapError(mapping, err)
+	var inputNode AstNode
+
+	for i, v := range mapping.Values {
+		if i > 0 {
+			err := fmt.Errorf("%w: script input mapping must have exactly one key", ErrUnexpectedKey)
+			return nil, p.wrapError(v.Key, err)
+		}
+
+		key, ok := v.Key.(*ast.StringNode)
+		if !ok {
+			err := fmt.Errorf("%w: script input mapping keys must be strings", ErrUnexpectedType)
+			return nil, p.wrapError(v.Key, err)
+		}
+
+		if inputNode, err = p.parseTermChild(state, key, v.Value, nil); err != nil {
+			return nil, err
+		}
 	}
 
-	v := mapping.Values[0]
-
-	key, ok := v.Key.(*ast.StringNode)
-	if !ok {
-		err := fmt.Errorf("%w: %s", ErrUnexpectedType, v.Key.Type())
-		return nil, p.wrapError(v.Key, err)
+	if inputNode == nil {
+		err := fmt.Errorf("%w: script input mapping must have exactly one key", ErrMissingScriptInput)
+		return nil, p.wrapError(node, err)
 	}
 
-	return p.parseTermChild(state, key, v.Value, nil)
+	return inputNode, nil
 }
 
 func (p *parserT) parseScriptLang(node ast.Node) (string, error) {

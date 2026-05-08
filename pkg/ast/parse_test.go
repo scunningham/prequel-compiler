@@ -346,7 +346,7 @@ func TestAstFail(t *testing.T) {
 		{
 			name:    "Fail_ScriptNoInput",
 			yaml:    testdata.TestFailScriptNoInput,
-			wantErr: ErrMissingKey,
+			wantErr: ErrMissingScriptInput,
 			wantPos: 203,
 		},
 		{
