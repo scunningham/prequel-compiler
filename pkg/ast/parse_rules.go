@@ -174,7 +174,7 @@ func (p *parserT) parseRootNode(state ruleState, node ast.Node) (AstNode, error)
 			if err := alreadySet(v); err != nil {
 				return nil, err
 			}
-			if rootNode, err = p.parseInnerNode(state, AstNodeTypeSeq, v.Value); err != nil {
+			if rootNode, err = p.parseNode(state, AstNodeTypeSeq, v.Value); err != nil {
 				return nil, err
 			}
 
@@ -182,7 +182,7 @@ func (p *parserT) parseRootNode(state ruleState, node ast.Node) (AstNode, error)
 			if err := alreadySet(v); err != nil {
 				return nil, err
 			}
-			if rootNode, err = p.parseInnerNode(state, AstNodeTypeSet, v.Value); err != nil {
+			if rootNode, err = p.parseNode(state, AstNodeTypeSet, v.Value); err != nil {
 				return nil, err
 			}
 

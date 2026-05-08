@@ -263,7 +263,7 @@ func TestAstFail(t *testing.T) {
 		{
 			name:   "Fail_TermsSemanticError6_NonStrict",
 			yaml:   testdata.TestFailTermsSemanticError6,
-			strict: false, // Normally fails in strict mode
+			strict: false, // Normally fails in strict mode due to origin requirement, but should fail with missing origin error in non-strict mode.
 		},
 		{
 			name:    "Fail_MultipleOrigin",

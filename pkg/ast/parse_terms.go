@@ -23,7 +23,7 @@ func (p *parserT) parseTerms(state ruleState, v ast.Node, negateOffset int) ([]*
 
 	for i, termNode := range seq.Values {
 
-		// Sanity check on rank; this should be after incrementing the rank for the term.
+		// Sanity check on rank; this should be inside the loop since rank is incremented for each term.
 		// Note: maxRank is one based, whereas rank is zero based, so we check if rank+1 exceeds maxRank.
 		if state.rank >= p.maxRank {
 			err := fmt.Errorf("%w: %d", ErrMaxRankExceeded, p.maxRank)
@@ -62,19 +62,19 @@ func (p *parserT) parseTerms(state ruleState, v ast.Node, negateOffset int) ([]*
 
 func (p *parserT) parseTerm(state ruleState, node ast.Node, negateOffset int) (*protoTerm, error) {
 
-	if node.Type() != ast.StringType {
+	// If the term is a mapping type, parse it as such. Otherwise, treat it as a simple string term.
+	if node.Type() == ast.MappingType {
 		return p.parseTermAsMap(state, node, negateOffset)
 	}
 
-	v, ok := node.(*ast.StringNode)
-	if !ok {
-		err := fmt.Errorf("%w: expected term to be a string, got %s", ErrUnexpectedType, node.Type())
-		return nil, p.wrapError(node, err)
+	s, err := p.nodeToString(node)
+	if err != nil {
+		return nil, err
 	}
 
 	return &protoTerm{
 		leaf: &protoField{
-			StrValue: v.Value,
+			StrValue: s,
 		},
 	}, nil
 }
@@ -179,10 +179,10 @@ func (p *parserT) parseTermChild(state ruleState, key *ast.StringNode, val ast.N
 	switch key.Value {
 
 	case kwSet:
-		return p.parseInnerNode(state, AstNodeTypeSet, val)
+		return p.parseNode(state, AstNodeTypeSet, val)
 
 	case kwSequence:
-		return p.parseInnerNode(state, AstNodeTypeSeq, val)
+		return p.parseNode(state, AstNodeTypeSeq, val)
 
 	case kwPromQL:
 		if nOpts != nil {
