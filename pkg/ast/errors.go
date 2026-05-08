@@ -33,6 +33,7 @@ var (
 	ErrNegateCount      = errors.New("negate fields cannot have count > 1")
 	ErrOverflow         = errors.New("value overflow")
 	ErrShortSequence    = errors.New("sequence must have at least 2 terms")
+	ErrTermTypeConflict = errors.New("term type conflicts with previous term type")
 	ErrUnexpectedKey    = errors.New("unexpected key")
 	ErrUnexpectedType   = errors.New("unexpected type")
 	ErrUndefinedAnchor  = errors.New("undefined anchor")

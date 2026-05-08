@@ -50,12 +50,12 @@ func (p *parserT) parseTerms(state ruleState, v ast.Node, negateOffset int) ([]*
 
 		case allFields && term.field == nil:
 			// This term is a child node, but previous terms were field nodes; this is not allowed.
-			err := fmt.Errorf("%w: all terms must be field nodes", ErrUnexpectedType)
+			err := fmt.Errorf("%w: all terms must be field nodes", ErrTermTypeConflict)
 			return nil, p.wrapError(termNode, err)
 
 		case !allFields && term.field != nil:
 			// This term is a field node, but previous terms were child nodes; this is not allowed.
-			err := fmt.Errorf("%w: all terms must be child nodes", ErrUnexpectedType)
+			err := fmt.Errorf("%w: all terms must be child nodes", ErrTermTypeConflict)
 			return nil, p.wrapError(termNode, err)
 
 		default:

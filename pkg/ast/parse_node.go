@@ -124,9 +124,14 @@ func (p *parserT) _parseNode(state ruleState, ty AstNodeType, node *ast.MappingN
 	case ty == AstNodeTypeSeq && len(proto.terms) == 1 && proto.terms[0].count() <= 1:
 		// A sequence with only one term is not allowed.
 		return nil, p.wrapError(findKey(node, kwOrder), ErrShortSequence)
-	case proto.window < 0 && len(proto.terms) > 1:
-		// A window is required if there are multiple terms to time bound the match.
-		return nil, p.wrapErrorParent(node, ErrMissingWindow)
+	case proto.window < 0:
+		if len(proto.terms) > 1 {
+			// A window is required if there are multiple terms to time bound the match.
+			return nil, p.wrapErrorParent(node, ErrMissingWindow)
+		} else {
+			// Reset window to 0 on a single match term if not specified for consistency.
+			proto.window = 0
+		}
 	}
 
 	// Process a negate node if it exists.
