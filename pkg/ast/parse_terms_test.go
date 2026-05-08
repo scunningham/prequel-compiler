@@ -474,7 +474,7 @@ term:
   count: -1
 `,
 			wantErr: ErrUnexpectedType,
-			wantPos: 32, // Position of the "count" key node, which is where the zero count error is detected.
+			wantPos: 39, // Position of the "-1" integer node, which is where the invalid count error is detected (negative count value).
 		},
 		{
 			name: "zero count",

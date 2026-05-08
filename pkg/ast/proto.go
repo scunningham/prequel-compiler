@@ -43,7 +43,9 @@ func protoTermsToAstFields(terms []*protoTerm) []AstFieldT {
 	var fields []AstFieldT
 	for _, term := range terms {
 		if term.field != nil {
-			fields = append(fields, term.field.ToField(term.negateOpts))
+			// Convert protoField to AstField, applying negate options if present.
+			// Must is ok as the fields have already been validated during parsing.
+			fields = append(fields, term.field.MustField(term.negateOpts))
 		}
 	}
 	return fields
@@ -64,7 +66,7 @@ func protoTermsToAstTerms(terms []*protoTerm) []AstTermT {
 
 // Validate the protoField and convert it to an AstField.
 // This includes ensuring that exactly one of StrValue, JqValue, RegexValue, Count, or Extract is set, and that Field is set.
-func (f *protoField) ToField(nOpts *AstNegateOptsT) AstFieldT {
+func (f *protoField) ToField(nOpts *AstNegateOptsT) (AstFieldT, error) {
 
 	t := AstFieldT{
 		Count:      f.Count,
@@ -97,10 +99,18 @@ func (f *protoField) ToField(nOpts *AstNegateOptsT) AstFieldT {
 		}
 
 	default:
-		panic("invalid protoField: exactly one of StrValue, JqValue, or RegexValue must be set")
+		return AstFieldT{}, ErrBadField
 	}
 
-	return t
+	return t, nil
+}
+
+func (f *protoField) MustField(nOpts *AstNegateOptsT) AstFieldT {
+	field, err := f.ToField(nOpts)
+	if err != nil {
+		panic(fmt.Sprintf("invalid protoField: %v", err))
+	}
+	return field
 }
 
 // Validate the protoField to ensure it has a valid configuration.
