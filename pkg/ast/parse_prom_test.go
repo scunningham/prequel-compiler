@@ -29,7 +29,6 @@ promql:
     source: stubSource
     origin: true
 `,
-			strict: false,
 			want: &AstPromT{
 				baseAst: baseAst{
 					scope: AstScopeCluster,
@@ -62,7 +61,6 @@ promql:
     source: stubSource
     origin: true
 `,
-			strict:  false,
 			failQL:  true,
 			wantErr: ErrBadPromQL,
 			wantPos: 18, // position of the "expr" value in the YAML input
@@ -73,7 +71,6 @@ promql:
 promql:
   expr: 12345
 `,
-			strict:  false,
 			wantErr: ErrUnexpectedType,
 			wantPos: 18, // position of the "12345" value in the YAML input
 		},
@@ -93,7 +90,6 @@ promql:
 promql:
   shrubbery: "nope"
 `,
-			strict:  false,
 			wantErr: ErrUnexpectedKey,
 			wantPos: 12, // position of the "shrubbery" key in the YAML input
 		},
@@ -102,9 +98,26 @@ promql:
 			yamlInput: `
 promql: "nope"
 `,
-			strict:  false,
 			wantErr: ErrUnexpectedType,
 			wantPos: 10, // position of the "nope" key in the YAML input
+		},
+		{
+			name: "negative interval",
+			yamlInput: `
+promql:
+  interval: -1m
+`,
+			wantErr: ErrUnexpectedType,
+			wantPos: 22, // position of the "-1m" value in the YAML input
+		},
+		{
+			name: "zero interval",
+			yamlInput: `
+promql:
+  interval: 0m
+`,
+			wantErr: ErrUnexpectedType,
+			wantPos: 22, // position of the "0m" value in the YAML input
 		},
 	}
 
