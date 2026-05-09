@@ -75,7 +75,7 @@ func (p *parserT) parseCreNode(node ast.Node) (*AstCreT, error) {
 
 		default:
 			if p.strict {
-				err = p.wrapError(v, fmt.Errorf("%w: %s", ErrUnexpectedKey, key))
+				err = p.wrapError(v.Key, ErrUnexpectedKey)
 			}
 		}
 

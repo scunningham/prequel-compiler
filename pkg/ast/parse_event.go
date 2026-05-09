@@ -1,8 +1,6 @@
 package ast
 
 import (
-	"fmt"
-
 	"github.com/goccy/go-yaml/ast"
 )
 
@@ -30,7 +28,7 @@ func (p *parserT) parseEventNode(state ruleState, node ast.Node) (*AstEventT, er
 			event.Source, err = p.nodeToString(v.Value)
 		default:
 			if p.strict {
-				err = p.wrapError(v.Key, fmt.Errorf("%w: unexpected key in event: %s", ErrUnexpectedKey, key))
+				err = p.wrapError(v.Key, ErrUnexpectedKey)
 			}
 		}
 

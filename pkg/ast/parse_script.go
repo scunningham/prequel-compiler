@@ -58,7 +58,7 @@ func (p *parserT) parseScriptNode(state ruleState, node ast.Node) (*AstScriptT, 
 			script.Input, err = p.parseScriptInput(child, v.Value)
 
 		default:
-			err = p.wrapError(v, ErrUnexpectedKey)
+			err = p.wrapError(v.Key, ErrUnexpectedKey)
 		}
 
 		if err != nil {

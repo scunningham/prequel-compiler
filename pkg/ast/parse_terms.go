@@ -168,7 +168,7 @@ func (p *parserT) parseTermAsMap(state ruleState, mapping *ast.MappingNode, nega
 			// which indicates that we are parsing terms in the context of a negate clause.
 			if negateOffset == 0 {
 				err := fmt.Errorf("%w: negate options not allowed on positive term", ErrUnexpectedKey)
-				return nil, p.wrapError(key, err)
+				return nil, p.wrapError(v.Key, err)
 			}
 			if nOpts == nil {
 				nOpts = &AstNegateOptsT{}

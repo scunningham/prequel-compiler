@@ -109,8 +109,8 @@ func (p *parserT) _parseNode(state ruleState, ty AstNodeType, node *ast.MappingN
 			}
 
 		default:
-			err := fmt.Errorf("%w: %s", ErrUnexpectedKey, v.Key)
-			return nil, p.wrapError(v, err)
+			err := fmt.Errorf("%w: %s", ErrUnexpectedKey, key)
+			return nil, p.wrapError(v.Key, err)
 		}
 	}
 

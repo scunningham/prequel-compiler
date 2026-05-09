@@ -230,7 +230,7 @@ extract:
     shrubbery: "value"
 `,
 			wantErr: ErrUnexpectedKey,
-			wantPos: 61, // Position of ':' in 'shrubbery: "value"'
+			wantPos: 52, // Position of 'shrubbery' in 'shrubbery: "value"'
 		},
 	}
 

@@ -95,7 +95,7 @@ func (p *parserT) parseExtractNode(node ast.Node, dupeMap map[string]struct{}) (
 			}
 
 		default:
-			err = p.wrapError(v, fmt.Errorf("%w: unexpected key in extract: %s", ErrUnexpectedKey, key))
+			err = p.wrapError(v.Key, ErrUnexpectedKey)
 		}
 
 		if err != nil {

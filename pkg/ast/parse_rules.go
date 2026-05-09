@@ -82,7 +82,7 @@ func (p *parserT) parseRuleNode(node ast.Node) (*AstRuleT, error) {
 			// TODO: Handle compiler filter
 
 		default:
-			err = p.wrapError(v, fmt.Errorf("%w: %s", ErrUnexpectedKey, key))
+			err = p.wrapError(v.Key, ErrUnexpectedKey)
 		}
 
 		if err != nil {

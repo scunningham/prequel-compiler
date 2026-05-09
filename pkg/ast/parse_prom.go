@@ -1,7 +1,7 @@
 package ast
 
 import (
-	"fmt"
+	"errors"
 
 	"github.com/goccy/go-yaml/ast"
 )
@@ -47,9 +47,7 @@ func (p *parserT) parsePromQLNode(state ruleState, node ast.Node) (*AstPromT, er
 			prom.Event, err = p.parseEventNode(child, v.Value)
 
 		default:
-			if p.strict {
-				err = p.wrapError(v, fmt.Errorf("%w: %s", ErrUnexpectedKey, key))
-			}
+			err = p.wrapError(v.Key, ErrUnexpectedKey)
 		}
 
 		if err != nil {
@@ -68,7 +66,9 @@ func (p *parserT) parsePromExpr(node ast.Node) (string, error) {
 	}
 
 	if err := p.validatePromQL(s); err != nil {
-		return "", err
+		err := errors.Join(ErrBadPromQL, err)
+		return "", p.wrapError(node, err)
 	}
+
 	return s, nil
 }

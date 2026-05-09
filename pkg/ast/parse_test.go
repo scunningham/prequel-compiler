@@ -215,7 +215,7 @@ func TestAstFail(t *testing.T) {
 			name:    "Fail_TermsSyntaxError1",
 			yaml:    testdata.TestFailTermsSyntaxError1,
 			wantErr: ErrUnexpectedKey,
-			wantPos: 670,
+			wantPos: 664,
 		},
 		{
 			name:    "Fail_TermsSyntaxError2",

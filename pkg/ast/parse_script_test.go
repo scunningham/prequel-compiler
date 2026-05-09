@@ -203,7 +203,7 @@ script:
   shrubbery: "nope"
 `,
 			wantErr: ErrUnexpectedKey,
-			wantPos: 21, // Position of the "shrubbery" key node, which is where the unexpected key error for script input is detected.
+			wantPos: 12, // Position of the "shrubbery" key node, which is where the unexpected key error for script input is detected.
 		},
 	}
 

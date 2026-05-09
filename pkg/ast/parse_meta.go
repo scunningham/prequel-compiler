@@ -46,7 +46,7 @@ func (p *parserT) parseMetadataNode(node ast.Node) (*AstMetadataT, error) {
 
 		default:
 			if p.strict {
-				err = p.wrapError(v, fmt.Errorf("%w: %s", ErrUnexpectedKey, key))
+				err = p.wrapError(v.Key, ErrUnexpectedKey)
 			}
 		}
 

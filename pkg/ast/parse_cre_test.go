@@ -118,7 +118,7 @@ unexpected: value
 `,
 			strict:  true,
 			wantErr: ErrUnexpectedKey,
-			wantPos: 43, // Pos of ':' in 'unexpected:'
+			wantPos: 33, // Pos of 'unexpected', one based.
 		},
 		{
 			name: "unexpected key in non-strict mode",

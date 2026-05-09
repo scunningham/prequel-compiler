@@ -78,7 +78,7 @@ metadata:
 `,
 			strict:  true,
 			wantErr: ErrUnexpectedKey,
-			wantPos: 79, // Position of the "extra" key node
+			wantPos: 74, // Position of the "extra" key node
 		},
 		{
 			name: "bad node type",
